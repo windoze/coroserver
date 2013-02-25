@@ -7,8 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2DB9AE5016DB01AB0001779C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE4F16DB01AB0001779C /* main.cpp */; };
-		2DB9AE5216DB01AB0001779C /* coroserver.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2DB9AE5116DB01AB0001779C /* coroserver.1 */; };
+		2DB9AE6216DB01CF0001779C /* iobuf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5916DB01CF0001779C /* iobuf.cpp */; };
+		2DB9AE6316DB01CF0001779C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5B16DB01CF0001779C /* main.cpp */; };
+		2DB9AE6416DB01CF0001779C /* server.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5C16DB01CF0001779C /* server.cpp */; };
+		2DB9AE6516DB01CF0001779C /* session.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5E16DB01CF0001779C /* session.cpp */; };
+		2DB9AE6616DB01CF0001779C /* stream_calc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE6016DB01CF0001779C /* stream_calc.cpp */; };
+		2DB9AE6C16DB02550001779C /* libboost_context.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DB9AE6916DB02550001779C /* libboost_context.a */; };
+		2DB9AE6D16DB02550001779C /* libboost_system.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DB9AE6A16DB02550001779C /* libboost_system.a */; };
+		2DB9AE6E16DB02550001779C /* libboost_thread.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DB9AE6B16DB02550001779C /* libboost_thread.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -18,7 +24,6 @@
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
-				2DB9AE5216DB01AB0001779C /* coroserver.1 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
@@ -26,8 +31,20 @@
 
 /* Begin PBXFileReference section */
 		2DB9AE4C16DB01AB0001779C /* coroserver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = coroserver; sourceTree = BUILT_PRODUCTS_DIR; };
-		2DB9AE4F16DB01AB0001779C /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		2DB9AE5116DB01AB0001779C /* coroserver.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = coroserver.1; sourceTree = "<group>"; };
+		2DB9AE5816DB01CF0001779C /* calc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = calc.h; sourceTree = "<group>"; };
+		2DB9AE5916DB01CF0001779C /* iobuf.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = iobuf.cpp; sourceTree = "<group>"; };
+		2DB9AE5A16DB01CF0001779C /* iobuf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iobuf.h; sourceTree = "<group>"; };
+		2DB9AE5B16DB01CF0001779C /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		2DB9AE5C16DB01CF0001779C /* server.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = server.cpp; sourceTree = "<group>"; };
+		2DB9AE5D16DB01CF0001779C /* server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = server.h; sourceTree = "<group>"; };
+		2DB9AE5E16DB01CF0001779C /* session.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = session.cpp; sourceTree = "<group>"; };
+		2DB9AE5F16DB01CF0001779C /* session.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = session.h; sourceTree = "<group>"; };
+		2DB9AE6016DB01CF0001779C /* stream_calc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = stream_calc.cpp; sourceTree = "<group>"; };
+		2DB9AE6116DB01CF0001779C /* stream_calc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stream_calc.h; sourceTree = "<group>"; };
+		2DB9AE6916DB02550001779C /* libboost_context.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_context.a; path = ../../../../usr/local/lib/libboost_context.a; sourceTree = "<group>"; };
+		2DB9AE6A16DB02550001779C /* libboost_system.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_system.a; path = ../../../../usr/local/lib/libboost_system.a; sourceTree = "<group>"; };
+		2DB9AE6B16DB02550001779C /* libboost_thread.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_thread.a; path = ../../../../usr/local/lib/libboost_thread.a; sourceTree = "<group>"; };
+		2DB9AE6F16DB029D0001779C /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,6 +52,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2DB9AE6C16DB02550001779C /* libboost_context.a in Frameworks */,
+				2DB9AE6D16DB02550001779C /* libboost_system.a in Frameworks */,
+				2DB9AE6E16DB02550001779C /* libboost_thread.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -44,7 +64,12 @@
 		2DB9AE4316DB01AB0001779C = {
 			isa = PBXGroup;
 			children = (
-				2DB9AE4E16DB01AB0001779C /* coroserver */,
+				2DB9AE6916DB02550001779C /* libboost_context.a */,
+				2DB9AE6A16DB02550001779C /* libboost_system.a */,
+				2DB9AE6B16DB02550001779C /* libboost_thread.a */,
+				2DB9AE6F16DB029D0001779C /* CMakeLists.txt */,
+				2DB9AE6816DB01F80001779C /* include */,
+				2DB9AE6716DB01EA0001779C /* src */,
 				2DB9AE4D16DB01AB0001779C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -57,13 +82,28 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		2DB9AE4E16DB01AB0001779C /* coroserver */ = {
+		2DB9AE6716DB01EA0001779C /* src */ = {
 			isa = PBXGroup;
 			children = (
-				2DB9AE4F16DB01AB0001779C /* main.cpp */,
-				2DB9AE5116DB01AB0001779C /* coroserver.1 */,
+				2DB9AE5B16DB01CF0001779C /* main.cpp */,
+				2DB9AE5916DB01CF0001779C /* iobuf.cpp */,
+				2DB9AE5C16DB01CF0001779C /* server.cpp */,
+				2DB9AE5E16DB01CF0001779C /* session.cpp */,
+				2DB9AE6016DB01CF0001779C /* stream_calc.cpp */,
 			);
-			path = coroserver;
+			name = src;
+			sourceTree = "<group>";
+		};
+		2DB9AE6816DB01F80001779C /* include */ = {
+			isa = PBXGroup;
+			children = (
+				2DB9AE5816DB01CF0001779C /* calc.h */,
+				2DB9AE5A16DB01CF0001779C /* iobuf.h */,
+				2DB9AE5D16DB01CF0001779C /* server.h */,
+				2DB9AE5F16DB01CF0001779C /* session.h */,
+				2DB9AE6116DB01CF0001779C /* stream_calc.h */,
+			);
+			name = include;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -117,7 +157,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2DB9AE5016DB01AB0001779C /* main.cpp in Sources */,
+				2DB9AE6216DB01CF0001779C /* iobuf.cpp in Sources */,
+				2DB9AE6316DB01CF0001779C /* main.cpp in Sources */,
+				2DB9AE6416DB01CF0001779C /* server.cpp in Sources */,
+				2DB9AE6516DB01CF0001779C /* session.cpp in Sources */,
+				2DB9AE6616DB01CF0001779C /* stream_calc.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -184,6 +228,8 @@
 		2DB9AE5616DB01AB0001779C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -191,6 +237,8 @@
 		2DB9AE5716DB01AB0001779C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
