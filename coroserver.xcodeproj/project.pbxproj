@@ -46,6 +46,7 @@
 		2DB9AE6B16DB02550001779C /* libboost_thread.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_thread.a; path = ../../../../usr/local/lib/libboost_thread.a; sourceTree = "<group>"; };
 		2DB9AE6F16DB029D0001779C /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		2DB9AE7016DB0A2D0001779C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
+		2DB9AE7116DB0B310001779C /* .gitignore */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +66,7 @@
 		2DB9AE4316DB01AB0001779C = {
 			isa = PBXGroup;
 			children = (
+				2DB9AE7116DB0B310001779C /* .gitignore */,
 				2DB9AE7016DB0A2D0001779C /* README.md */,
 				2DB9AE6916DB02550001779C /* libboost_context.a */,
 				2DB9AE6A16DB02550001779C /* libboost_system.a */,
