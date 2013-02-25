@@ -28,7 +28,16 @@ void session::handle_read(coro_t::caller_type &ca) {
     outbuf obuf(socket_, coro_, ca);
     std::ostream sout(&obuf);
 
-    stream_calc(sin, sout);
+    try {
+        stream_calc(sin, sout);
+    } catch( boost::coroutines::detail::forced_unwind) {
+        throw;
+    } catch ( std::exception const& e) {
+        sout << "Exception cought:" << e.what() << std::endl;
+    } catch(...) {
+        sout << "Unknown exception cought" << std::endl;
+    }
+
     io_service_.post( boost::bind(&session::destroy, this) );
 }
 
