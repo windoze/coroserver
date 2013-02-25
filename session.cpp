@@ -33,9 +33,9 @@ void session::handle_read(coro_t::caller_type &ca) {
     } catch( boost::coroutines::detail::forced_unwind) {
         throw;
     } catch ( std::exception const& e) {
-        sout << "Exception cought:" << e.what() << std::endl;
+        sout << "Exception caught:" << e.what() << std::endl;
     } catch(...) {
-        sout << "Unknown exception cought" << std::endl;
+        sout << "Unknown exception caught" << std::endl;
     }
 
     io_service_.post( boost::bind(&session::destroy, this) );
