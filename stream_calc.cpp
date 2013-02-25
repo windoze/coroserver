@@ -25,10 +25,14 @@ void stream_calc(std::istream &sin, std::ostream &sout) {
         if(line=="quit") break;
         iterator_type first=line.cbegin();
         iterator_type last=line.cend();
-        double v;
+        value_t v;
         bool r=phrase_parse(first, last, calc, space, v);
         if (r && first==last) {
-            sout << v << std::endl;
+            if (v.denominator()==1) {
+                sout << v.numerator() << std::endl;
+            } else {
+                sout << v << std::endl;
+            }
         } else {
             sout << "Parse error" << std::endl;
         }
