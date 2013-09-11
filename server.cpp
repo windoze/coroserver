@@ -6,8 +6,10 @@
 //  Copyright (c) 2013 Xu Chen. All rights reserved.
 //
 
+#include <functional>
+#include <memory>
 #include <boost/bind.hpp>
-#include <boost/thread.hpp>
+#include <thread>
 #include "session.h"
 #include "server.h"
 
@@ -27,7 +29,7 @@ server::server(const std::string &address,
 #if defined(SIGQUIT)
     signals_.add(SIGQUIT);
 #endif // defined(SIGQUIT)
-    signals_.async_wait(boost::bind(&server::handle_stop, this));
+    signals_.async_wait(std::bind(&server::handle_stop, this));
     
     // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
     boost::asio::ip::tcp::resolver resolver(io_service_);
@@ -43,10 +45,12 @@ server::server(const std::string &address,
 
 void server::run() {
     // Create a pool of threads to run all of the io_services.
-    std::vector<boost::shared_ptr<boost::thread> > threads;
+    std::vector<std::shared_ptr<std::thread> > threads;
     for (std::size_t i = 0; i < thread_pool_size_; ++i) {
-        boost::shared_ptr<boost::thread> thread(new boost::thread(boost::bind(&boost::asio::io_service::run,
-                                                                              &io_service_)));
+        // NOTE: It's weird that std::bind doesn't work here
+        auto x=boost::bind(&boost::asio::io_service::run,
+                           &io_service_);
+        std::shared_ptr<std::thread> thread(new std::thread(x));
         threads.push_back(thread);
     }
     
@@ -57,6 +61,7 @@ void server::run() {
 
 void server::start_accept() {
     session *new_session=new session(io_service_);
+    // NOTE: It's weird that std::bind doesn't work here
     acceptor_.async_accept(new_session->socket(),
                            boost::bind(&server::handle_accept, this,
                                        new_session, boost::asio::placeholders::error) );

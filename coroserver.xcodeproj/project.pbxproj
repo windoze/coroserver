@@ -13,9 +13,8 @@
 		2DB9AE6516DB01CF0001779C /* session.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5E16DB01CF0001779C /* session.cpp */; };
 		2DB9AE6616DB01CF0001779C /* stream_calc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE6016DB01CF0001779C /* stream_calc.cpp */; };
 		2DCEAB5817E0722400204B89 /* libboost_context-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5517E0722400204B89 /* libboost_context-mt.a */; };
-		2DCEAB5917E0722400204B89 /* libboost_system-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5617E0722400204B89 /* libboost_system-mt.a */; };
-		2DCEAB5A17E0722400204B89 /* libboost_thread-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5717E0722400204B89 /* libboost_thread-mt.a */; };
 		2DCEAB5C17E0794C00204B89 /* libboost_coroutine-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5B17E0794C00204B89 /* libboost_coroutine-mt.a */; };
+		2DCEAB5E17E0885C00204B89 /* libboost_system-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5D17E0885C00204B89 /* libboost_system-mt.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -46,9 +45,8 @@
 		2DB9AE7016DB0A2D0001779C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
 		2DB9AE7116DB0B310001779C /* .gitignore */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		2DCEAB5517E0722400204B89 /* libboost_context-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_context-mt.a"; path = "../../../../opt/local/lib/libboost_context-mt.a"; sourceTree = "<group>"; };
-		2DCEAB5617E0722400204B89 /* libboost_system-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_system-mt.a"; path = "../../../../opt/local/lib/libboost_system-mt.a"; sourceTree = "<group>"; };
-		2DCEAB5717E0722400204B89 /* libboost_thread-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_thread-mt.a"; path = "../../../../opt/local/lib/libboost_thread-mt.a"; sourceTree = "<group>"; };
 		2DCEAB5B17E0794C00204B89 /* libboost_coroutine-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_coroutine-mt.a"; path = "../../../../opt/local/lib/libboost_coroutine-mt.a"; sourceTree = "<group>"; };
+		2DCEAB5D17E0885C00204B89 /* libboost_system-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_system-mt.a"; path = "../../../../opt/local/lib/libboost_system-mt.a"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,10 +54,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2DCEAB5E17E0885C00204B89 /* libboost_system-mt.a in Frameworks */,
 				2DCEAB5C17E0794C00204B89 /* libboost_coroutine-mt.a in Frameworks */,
 				2DCEAB5817E0722400204B89 /* libboost_context-mt.a in Frameworks */,
-				2DCEAB5917E0722400204B89 /* libboost_system-mt.a in Frameworks */,
-				2DCEAB5A17E0722400204B89 /* libboost_thread-mt.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -69,10 +66,9 @@
 		2DB9AE4316DB01AB0001779C = {
 			isa = PBXGroup;
 			children = (
+				2DCEAB5D17E0885C00204B89 /* libboost_system-mt.a */,
 				2DCEAB5B17E0794C00204B89 /* libboost_coroutine-mt.a */,
 				2DCEAB5517E0722400204B89 /* libboost_context-mt.a */,
-				2DCEAB5617E0722400204B89 /* libboost_system-mt.a */,
-				2DCEAB5717E0722400204B89 /* libboost_thread-mt.a */,
 				2DB9AE7116DB0B310001779C /* .gitignore */,
 				2DB9AE7016DB0A2D0001779C /* README.md */,
 				2DB9AE6F16DB029D0001779C /* CMakeLists.txt */,

@@ -8,6 +8,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/asio.hpp>
+#include <boost/asio/spawn.hpp>
 #include <boost/coroutine/coroutine.hpp>
 
 #ifndef session_h_included
@@ -27,12 +28,12 @@ public:
     { return socket_; }
     
 private:
-    void handle_read(coro_t::caller_type &ca);
+    void go(boost::asio::yield_context yield);
     void destroy();
     
     coro_t coro_;
-    boost::asio::io_service &io_service_;
     boost::asio::ip::tcp::socket socket_;
+    boost::asio::io_service::strand strand_;
 };
 
 #endif /* defined(session_h_included) */

@@ -6,26 +6,26 @@
 //  Copyright (c) 2013 Xu Chen. All rights reserved.
 //
 
-#include <boost/bind.hpp>
+#include <functional>
 #include "iobuf.h"
 #include "session.h"
 #include "stream_calc.h"
 
 session::session(boost::asio::io_service &io_service)
 : coro_()
-, io_service_(io_service)
-, socket_(io_service_)
+, socket_(io_service)
+, strand_(socket_.get_io_service())
 {}
 
 void session::start() {
-    coro_ = coro_t( boost::bind(&session::handle_read, this, _1) );
+    boost::asio::spawn(strand_, std::bind(&session::go, this, std::placeholders::_1));
 }
 
-void session::handle_read(coro_t::caller_type &ca) {
-    inbuf ibuf(socket_, coro_, ca);
+void session::go(boost::asio::yield_context yield) {
+    inbuf ibuf(socket_, yield);
     std::istream sin(&ibuf);
 
-    outbuf obuf(socket_, coro_, ca);
+    outbuf obuf(socket_, yield);
     std::ostream sout(&obuf);
 
     try {
@@ -38,7 +38,7 @@ void session::handle_read(coro_t::caller_type &ca) {
         sout << "Unknown exception caught" << std::endl;
     }
 
-    io_service_.post( boost::bind(&session::destroy, this) );
+    strand_.post( std::bind(&session::destroy, this) );
 }
 
 void session::destroy() {

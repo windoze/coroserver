@@ -9,6 +9,7 @@
 #include <streambuf>
 #include <boost/noncopyable.hpp>
 #include <boost/asio.hpp>
+#include <boost/asio/spawn.hpp>
 #include <boost/coroutine/coroutine.hpp>
 
 #ifndef iobuf_h_included
@@ -25,8 +26,7 @@ constexpr size_t bf_size=4096;
 class inbuf : public std::streambuf, private boost::noncopyable {
 public:
     inbuf(boost::asio::ip::tcp::socket &s,
-          coro_t &coro,
-          coro_t::caller_type &ca);
+          boost::asio::yield_context yield);
 
 protected:
     virtual int underflow() override;
@@ -37,8 +37,7 @@ private:
     static const std::streamsize pb_size;
     
     boost::asio::ip::tcp::socket &s_;
-    coro_t &coro_;
-    coro_t::caller_type &ca_;
+    boost::asio::yield_context yield_;
     char buffer_[bf_size];
 };
 
@@ -49,8 +48,7 @@ private:
 class outbuf : public std::streambuf, private boost::noncopyable {
 public:
     outbuf(boost::asio::ip::tcp::socket &s,
-           coro_t &coro,
-           coro_t::caller_type &ca);
+           boost::asio::yield_context yield);
     
 protected:
     virtual int_type overflow(int_type c = traits_type::eof()) override;
@@ -60,8 +58,7 @@ private:
     int_type nudge_();
     
     boost::asio::ip::tcp::socket &s_;
-    coro_t &coro_;
-    coro_t::caller_type &ca_;
+    boost::asio::yield_context yield_;
     char buffer_[bf_size];
 };
 
