@@ -12,7 +12,7 @@
 int main(int argc, const char *argv[]) {
     const char *addr="0.0.0.0";
     const char *port="20000";
-    std::size_t num_threads = 2;
+    std::size_t num_threads = 3;
     try {
         server s(addr, port, num_threads);
         

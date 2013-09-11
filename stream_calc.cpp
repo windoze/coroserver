@@ -7,7 +7,7 @@
 //
 
 #include <iomanip>
-#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include "calc.h"
 #include "stream_calc.h"
 

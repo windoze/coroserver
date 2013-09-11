@@ -8,8 +8,9 @@
 
 #include <functional>
 #include <memory>
-#include <boost/bind.hpp>
 #include <thread>
+#include <boost/bind.hpp>
+#include <boost/asio/spawn.hpp>
 #include "session.h"
 #include "server.h"
 
@@ -29,7 +30,7 @@ server::server(const std::string &address,
 #if defined(SIGQUIT)
     signals_.add(SIGQUIT);
 #endif // defined(SIGQUIT)
-    signals_.async_wait(std::bind(&server::handle_stop, this));
+    signals_.async_wait(std::bind(&server::stop, this));
     
     // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
     boost::asio::ip::tcp::resolver resolver(io_service_);
@@ -40,7 +41,7 @@ server::server(const std::string &address,
     acceptor_.bind(endpoint);
     acceptor_.listen();
     
-    start_accept();
+    start();
 }
 
 void server::run() {
@@ -48,9 +49,8 @@ void server::run() {
     std::vector<std::shared_ptr<std::thread> > threads;
     for (std::size_t i = 0; i < thread_pool_size_; ++i) {
         // NOTE: It's weird that std::bind doesn't work here
-        auto x=boost::bind(&boost::asio::io_service::run,
-                           &io_service_);
-        std::shared_ptr<std::thread> thread(new std::thread(x));
+        std::shared_ptr<std::thread> thread(new std::thread(boost::bind(&boost::asio::io_service::run,
+                                                                        &io_service_)));
         threads.push_back(thread);
     }
     
@@ -59,21 +59,21 @@ void server::run() {
         threads[i]->join();
 }
 
-void server::start_accept() {
-    session *new_session=new session(io_service_);
-    // NOTE: It's weird that std::bind doesn't work here
-    acceptor_.async_accept(new_session->socket(),
-                           boost::bind(&server::handle_accept, this,
-                                       new_session, boost::asio::placeholders::error) );
+void server::start() {
+    boost::asio::spawn(io_service_,
+                       [&](boost::asio::yield_context yield)
+                       {
+                           for (;;)
+                           {
+                               boost::system::error_code ec;
+                               boost::asio::ip::tcp::socket socket(io_service_);
+                               acceptor_.async_accept(socket, yield[ec]);
+                               if (!ec)
+                                   std::make_shared<session>(std::move(socket))->start();
+                           }
+                       });
 }
 
-void server::handle_accept(session *new_session, const boost::system::error_code &error) {
-    if (!error) {
-        new_session->start();
-    }
-    start_accept();
-}
-
-void server::handle_stop() {
+void server::stop() {
     io_service_.stop();
 }

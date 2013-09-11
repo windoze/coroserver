@@ -6,21 +6,19 @@
 //  Copyright (c) 2013 Xu Chen. All rights reserved.
 //
 
-#include <boost/noncopyable.hpp>
-#include <boost/asio.hpp>
-#include <boost/asio/spawn.hpp>
-#include <boost/coroutine/coroutine.hpp>
+#include <memory>
+#include <boost/asio/strand.hpp>
+#include <boost/asio/ip/tcp.hpp>
 
 #ifndef session_h_included
 #define session_h_included
 
-class session : private boost::noncopyable
+class session : public std::enable_shared_from_this<session>
 {
 public:
-    typedef boost::tuple<boost::system::error_code, std::size_t> tuple_t;
-    typedef boost::coroutines::coroutine<void(boost::system::error_code, std::size_t)> coro_t;
-    
-    session(boost::asio::io_service &io_service);
+    explicit session(boost::asio::ip::tcp::socket socket);
+    session(const session&) = delete;
+    session& operator=(const session&) = delete;
     
     void start();
 
@@ -28,10 +26,6 @@ public:
     { return socket_; }
     
 private:
-    void go(boost::asio::yield_context yield);
-    void destroy();
-    
-    coro_t coro_;
     boost::asio::ip::tcp::socket socket_;
     boost::asio::io_service::strand strand_;
 };

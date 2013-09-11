@@ -7,26 +7,24 @@
 //
 
 #include <streambuf>
-#include <boost/noncopyable.hpp>
-#include <boost/asio.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/spawn.hpp>
-#include <boost/coroutine/coroutine.hpp>
 
 #ifndef iobuf_h_included
 #define iobuf_h_included
 
-typedef boost::tuple<boost::system::error_code, std::size_t> tuple_t;
-typedef boost::coroutines::coroutine<void(boost::system::error_code, std::size_t)> coro_t;
 constexpr size_t bf_size=4096;
 
 /*
  * Input socket streambuf with coroutine support
  * Yields on buffer underflow, and gets resumed on io completion
  */
-class inbuf : public std::streambuf, private boost::noncopyable {
+class async_inbuf : public std::streambuf {
 public:
-    inbuf(boost::asio::ip::tcp::socket &s,
-          boost::asio::yield_context yield);
+    async_inbuf(boost::asio::ip::tcp::socket &s,
+                boost::asio::yield_context yield);
+    async_inbuf(const async_inbuf&) = delete;
+    async_inbuf& operator=(const async_inbuf&) = delete;
 
 protected:
     virtual int underflow() override;
@@ -45,10 +43,12 @@ private:
  * Output socket streambuf with coroutine support
  * Yields on buffer overflow or syncing, gets resumed on io completion
  */
-class outbuf : public std::streambuf, private boost::noncopyable {
+class async_outbuf : public std::streambuf {
 public:
-    outbuf(boost::asio::ip::tcp::socket &s,
-           boost::asio::yield_context yield);
+    async_outbuf(boost::asio::ip::tcp::socket &s,
+                 boost::asio::yield_context yield);
+    async_outbuf(const async_outbuf&) = delete;
+    async_outbuf& operator=(const async_outbuf&) = delete;
     
 protected:
     virtual int_type overflow(int_type c = traits_type::eof()) override;

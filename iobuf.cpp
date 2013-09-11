@@ -6,20 +6,23 @@
 //  Copyright (c) 2013 Xu Chen. All rights reserved.
 //
 
+#include <boost/asio/write.hpp>
 #include "iobuf.h"
 
-const std::streamsize inbuf::pb_size=16;
+const std::streamsize async_inbuf::pb_size=4;
 
-inbuf::inbuf(boost::asio::ip::tcp::socket &s,
-             boost::asio::yield_context yield)
+async_inbuf::async_inbuf(boost::asio::ip::tcp::socket &s,
+                         boost::asio::yield_context yield)
 : s_(s)
 , yield_(yield)
 , buffer_()
 {
-    setg(buffer_ + pb_size, buffer_ + pb_size, buffer_ + pb_size);
+    setg(buffer_ + pb_size,
+         buffer_ + pb_size,
+         buffer_ + pb_size);
 }
 
-int inbuf::underflow() {
+int async_inbuf::underflow() {
     if ( gptr() < egptr() )
         return traits_type::to_int_type( *gptr() );
     
@@ -29,25 +32,35 @@ int inbuf::underflow() {
         return traits_type::to_int_type( *gptr() );
 }
 
-int inbuf::fetch_() {
-    std::streamsize num = std::min(static_cast< std::streamsize >( gptr() - eback() ), pb_size);
+int async_inbuf::fetch_() {
+    std::streamsize num = std::min(static_cast<std::streamsize>(gptr() - eback()),
+                                   pb_size);
     
     std::memmove(buffer_ + (pb_size - num),
-                 gptr() - num, num);
+                 gptr() - num,
+                 num);
     
-    std::size_t n = s_.async_read_some( boost::asio::buffer(buffer_ + pb_size, bf_size - pb_size),
-                       yield_ );
-    setg(buffer_ + pb_size - num, buffer_ + pb_size, buffer_ + pb_size + n);
+    boost::system::error_code ec;
+    std::size_t n = s_.async_read_some(boost::asio::buffer(buffer_ + pb_size,
+                                                           bf_size - pb_size),
+                                       yield_[ec]);
+    if (ec) {
+        setg(0, 0, 0);
+        return -1;
+    }
+    setg(buffer_ + pb_size - num,
+         buffer_ + pb_size,
+         buffer_ + pb_size + n);
     return n;
 }
 
-outbuf::outbuf(boost::asio::ip::tcp::socket &s,
-               boost::asio::yield_context yield)
+async_outbuf::async_outbuf(boost::asio::ip::tcp::socket &s,
+                           boost::asio::yield_context yield)
 : s_(s)
 , yield_(yield)
 {}
 
-outbuf::int_type outbuf::overflow(outbuf::int_type c) {
+async_outbuf::int_type async_outbuf::overflow(async_outbuf::int_type c) {
     if ( pbase() == NULL ) {
         // save one char for next overflow:
         setp( buffer_, buffer_ + bf_size - 1 );
@@ -58,23 +71,27 @@ outbuf::int_type outbuf::overflow(outbuf::int_type c) {
         }
     } else {
         c = nudge_();
-        setp( buffer_, buffer_ + bf_size - 1 );
+        setp(buffer_,
+             buffer_ + bf_size - 1);
     }
     return c;
 }
 
-int outbuf::sync() {
+int async_outbuf::sync() {
     int_type n = nudge_();
-    setp( buffer_, buffer_ + bf_size - 1 );
+    setp(buffer_,
+         buffer_ + bf_size - 1);
     if (n==traits_type::eof()) {
         return -1;
     }
     return 0;
 }
 
-outbuf::int_type outbuf::nudge_() {
+async_outbuf::int_type async_outbuf::nudge_() {
+    boost::system::error_code ec;
     boost::asio::async_write(s_,
-                             boost::asio::const_buffers_1(pbase(), pptr() - pbase()),
-                             yield_ );
-    return 0;
+                             boost::asio::const_buffers_1(pbase(),
+                                                          pptr() - pbase()),
+                             yield_[ec]);
+    return ec ? traits_type::eof() : 0;
 }
