@@ -8,7 +8,7 @@
 
 #include <functional>
 #include <boost/asio/spawn.hpp>
-#include "iobuf.h"
+#include "async_streambuf.h"
 #include "session.h"
 #include "http_session.h"
 
@@ -21,19 +21,16 @@ void session::start() {
     auto self(shared_from_this());
     boost::asio::spawn(strand_,
                        [this, self](boost::asio::yield_context yield) {
-                           async_inbuf aibuf(socket_, yield);
-                           std::istream sin(&aibuf);
-                           
-                           async_outbuf aobuf(socket_, yield);
-                           std::ostream sout(&aobuf);
+                           async_streambuf<boost::asio::ip::tcp::socket> sbuf(socket_, yield);
+                           std::iostream s(&sbuf);
                            
                            try {
-                               http_session s(sin, sout, yield);
-                               s();
+                               http_session sn(s, yield);
+                               sn();
                            } catch ( std::exception const& e) {
-                               sout << "Exception caught:" << e.what() << std::endl;
+                               s << "Exception caught:" << e.what() << std::endl;
                            } catch(...) {
-                               sout << "Unknown exception caught" << std::endl;
+                               s << "Unknown exception caught" << std::endl;
                            }
                        });
 }

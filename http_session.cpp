@@ -12,9 +12,8 @@
 #include <boost/algorithm/string/split.hpp>
 #include "http_session.h"
 
-http_session::http_session(std::istream &is, std::ostream &os, boost::asio::yield_context yield)
-: is_(is)
-, os_(os)
+http_session::http_session(std::iostream &s, boost::asio::yield_context yield)
+: s_(s)
 , yield_(yield)
 {}
 
@@ -23,23 +22,23 @@ bool http_session::operator()() {
     using namespace boost;
     string line;
     // Read request line
-    getline(is_, line);
+    getline(s_, line);
     // TODO: Parse request line
     //typedef vector< iterator_range<string::iterator> > find_vector_type;
     //find_vector_type FindVec;
     //find_all(FindVec, line, " ");
     // Read headers
     do {
-        getline(is_, line);
+        getline(s_, line);
         trim(line);
         // TODO: Parse headers
     } while (!line.empty());
     // TODO: 
-    os_ << "HTTP/1.1 200 OK\n";
-    os_ << "Content-Type: text/html\n";
-    os_ << "Content-Length: 67\n";
-    os_ << "\n";
-    os_ << "<HTML>\n<TITLE>Test</TITLE><BODY><H1>It works!</H1></BODY></HTML>\n";
-    os_.flush();
+    s_ << "HTTP/1.1 200 OK\n";
+    s_ << "Content-Type: text/html\n";
+    s_ << "Content-Length: 65\n";
+    s_ << "\n";
+    s_ << "<HTML>\n<TITLE>Test</TITLE><BODY><H1>It works!</H1></BODY></HTML>\n";
+    s_.flush();
     return false;
 }

@@ -15,12 +15,11 @@
 
 class http_session {
 public:
-    http_session(std::istream &is, std::ostream &os, boost::asio::yield_context yield);
+    http_session(std::iostream &s, boost::asio::yield_context yield);
     bool operator()();
     
 private:
-    std::istream &is_;
-    std::ostream &os_;
+    std::iostream &s_;
     boost::asio::yield_context yield_;
 };
 
