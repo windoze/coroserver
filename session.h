@@ -6,9 +6,12 @@
 //  Copyright (c) 2013 Xu Chen. All rights reserved.
 //
 
+#include <functional>
 #include <memory>
 #include <boost/asio/strand.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/spawn.hpp>
+#include "async_stream.h"
 
 #ifndef session_h_included
 #define session_h_included
@@ -20,8 +23,8 @@ public:
     session(const session&) = delete;
     session& operator=(const session&) = delete;
     
-    void start();
-
+    void start(std::function<bool(std::iostream&, boost::asio::yield_context)> f);
+    
     inline boost::asio::ip::tcp::socket &socket()
     { return socket_; }
     

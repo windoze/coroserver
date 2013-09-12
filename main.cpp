@@ -7,6 +7,7 @@
 //
 
 #include <iostream>
+#include "http_proxy_protocol.h"
 #include "server.h"
 
 int main(int argc, const char *argv[]) {
@@ -14,7 +15,7 @@ int main(int argc, const char *argv[]) {
     const char *port="20000";
     std::size_t num_threads = 3;
     try {
-        server s(addr, port, num_threads);
+        server s(&http_proxy_protocol, addr, port, num_threads);
         
         s.run();
     } catch (std::exception& e) {

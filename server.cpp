@@ -14,14 +14,37 @@
 #include "session.h"
 #include "server.h"
 
-server::server(const std::string &address,
+server::server(std::function<bool(std::iostream&, boost::asio::yield_context)> protocol_processor,
+               const std::string &address,
                const std::string &port,
                std::size_t thread_pool_size)
-: thread_pool_size_(thread_pool_size)
+: protocol_processor_(protocol_processor)
+, thread_pool_size_(thread_pool_size)
 , io_service_()
 , signals_(io_service_)
 , acceptor_(io_service_)
 {
+    init(address, port);
+}
+
+server::server(std::function<bool(std::iostream&)> simple_protocol_processor,
+               const std::string &address,
+               const std::string &port,
+               std::size_t thread_pool_size)
+: protocol_processor_(std::bind(&server::simple_processor_wrapper,
+                                this,
+                                std::placeholders::_1,
+                                std::placeholders::_2))
+, proc_simple_(simple_protocol_processor)
+, thread_pool_size_(thread_pool_size)
+, io_service_()
+, signals_(io_service_)
+, acceptor_(io_service_)
+{
+    init(address, port);
+}
+
+void server::init(const std::string &address, const std::string &port) {
     // Register to handle the signals that indicate when the server should exit.
     // It is safe to register for the same signal multiple times in a program,
     // provided all registration for the specified signal is made through Asio.
@@ -69,7 +92,7 @@ void server::start() {
                                boost::asio::ip::tcp::socket socket(io_service_);
                                acceptor_.async_accept(socket, yield[ec]);
                                if (!ec)
-                                   std::make_shared<session>(std::move(socket))->start();
+                                   std::make_shared<session>(std::move(socket))->start(protocol_processor_);
                            }
                        });
 }
