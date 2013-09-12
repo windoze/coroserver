@@ -10,7 +10,7 @@
 #include <boost/asio/spawn.hpp>
 #include "iobuf.h"
 #include "session.h"
-#include "stream_calc.h"
+#include "http_session.h"
 
 session::session(::boost::asio::ip::tcp::socket socket)
 : socket_(std::move(socket))
@@ -28,7 +28,8 @@ void session::start() {
                            std::ostream sout(&aobuf);
                            
                            try {
-                               stream_calc(sin, sout);
+                               http_session s(sin, sout, yield);
+                               s();
                            } catch ( std::exception const& e) {
                                sout << "Exception caught:" << e.what() << std::endl;
                            } catch(...) {

@@ -7,11 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2D40A6D017E0B88B00282132 /* http_session.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D40A6CE17E0B88B00282132 /* http_session.cpp */; };
 		2DB9AE6216DB01CF0001779C /* iobuf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5916DB01CF0001779C /* iobuf.cpp */; };
 		2DB9AE6316DB01CF0001779C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5B16DB01CF0001779C /* main.cpp */; };
 		2DB9AE6416DB01CF0001779C /* server.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5C16DB01CF0001779C /* server.cpp */; };
 		2DB9AE6516DB01CF0001779C /* session.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5E16DB01CF0001779C /* session.cpp */; };
-		2DB9AE6616DB01CF0001779C /* stream_calc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE6016DB01CF0001779C /* stream_calc.cpp */; };
 		2DCEAB5817E0722400204B89 /* libboost_context-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5517E0722400204B89 /* libboost_context-mt.a */; };
 		2DCEAB5C17E0794C00204B89 /* libboost_coroutine-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5B17E0794C00204B89 /* libboost_coroutine-mt.a */; };
 		2DCEAB5E17E0885C00204B89 /* libboost_system-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5D17E0885C00204B89 /* libboost_system-mt.a */; };
@@ -30,8 +30,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2D40A6CE17E0B88B00282132 /* http_session.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = http_session.cpp; sourceTree = "<group>"; };
+		2D40A6CF17E0B88B00282132 /* http_session.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = http_session.h; sourceTree = "<group>"; };
 		2DB9AE4C16DB01AB0001779C /* coroserver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = coroserver; sourceTree = BUILT_PRODUCTS_DIR; };
-		2DB9AE5816DB01CF0001779C /* calc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = calc.h; sourceTree = "<group>"; };
 		2DB9AE5916DB01CF0001779C /* iobuf.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = iobuf.cpp; sourceTree = "<group>"; };
 		2DB9AE5A16DB01CF0001779C /* iobuf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iobuf.h; sourceTree = "<group>"; };
 		2DB9AE5B16DB01CF0001779C /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
@@ -39,8 +40,6 @@
 		2DB9AE5D16DB01CF0001779C /* server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = server.h; sourceTree = "<group>"; };
 		2DB9AE5E16DB01CF0001779C /* session.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = session.cpp; sourceTree = "<group>"; };
 		2DB9AE5F16DB01CF0001779C /* session.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = session.h; sourceTree = "<group>"; };
-		2DB9AE6016DB01CF0001779C /* stream_calc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = stream_calc.cpp; sourceTree = "<group>"; };
-		2DB9AE6116DB01CF0001779C /* stream_calc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stream_calc.h; sourceTree = "<group>"; };
 		2DB9AE6F16DB029D0001779C /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		2DB9AE7016DB0A2D0001779C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
 		2DB9AE7116DB0B310001779C /* .gitignore */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
@@ -93,7 +92,7 @@
 				2DB9AE5916DB01CF0001779C /* iobuf.cpp */,
 				2DB9AE5C16DB01CF0001779C /* server.cpp */,
 				2DB9AE5E16DB01CF0001779C /* session.cpp */,
-				2DB9AE6016DB01CF0001779C /* stream_calc.cpp */,
+				2D40A6CE17E0B88B00282132 /* http_session.cpp */,
 			);
 			name = src;
 			sourceTree = "<group>";
@@ -101,11 +100,10 @@
 		2DB9AE6816DB01F80001779C /* include */ = {
 			isa = PBXGroup;
 			children = (
-				2DB9AE5816DB01CF0001779C /* calc.h */,
 				2DB9AE5A16DB01CF0001779C /* iobuf.h */,
 				2DB9AE5D16DB01CF0001779C /* server.h */,
 				2DB9AE5F16DB01CF0001779C /* session.h */,
-				2DB9AE6116DB01CF0001779C /* stream_calc.h */,
+				2D40A6CF17E0B88B00282132 /* http_session.h */,
 			);
 			name = include;
 			sourceTree = "<group>";
@@ -165,7 +163,7 @@
 				2DB9AE6316DB01CF0001779C /* main.cpp in Sources */,
 				2DB9AE6416DB01CF0001779C /* server.cpp in Sources */,
 				2DB9AE6516DB01CF0001779C /* session.cpp in Sources */,
-				2DB9AE6616DB01CF0001779C /* stream_calc.cpp in Sources */,
+				2D40A6D017E0B88B00282132 /* http_session.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
