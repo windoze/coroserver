@@ -6,11 +6,11 @@
 //  Copyright (c) 2013 0d0a.com. All rights reserved.
 //
 
-#include <iostream>
-#include "async_stream.h"
-
 #ifndef __coroserver__http_protocol__
 #define __coroserver__http_protocol__
+
+#include <iostream>
+#include "async_stream.h"
 
 /**
  * Handle HTTP protocol

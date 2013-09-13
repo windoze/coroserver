@@ -6,14 +6,14 @@
 //  Copyright (c) 2013 0d0a.com. All rights reserved.
 //
 
+#ifndef async_stream_h_included
+#define async_stream_h_included
+
 #include <streambuf>
 #include <iostream>
 #include <boost/asio/write.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/asio/ip/tcp.hpp>
-
-#ifndef async_stream_h_included
-#define async_stream_h_included
 
 /**
  * Default stream input and output buffer size

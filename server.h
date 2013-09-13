@@ -6,15 +6,15 @@
 //  Copyright (c) 2013 0d0a.com. All rights reserved.
 //
 
+#ifndef server_h_included
+#define server_h_included
+
 #include <string>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <boost/asio/spawn.hpp>
 #include "async_stream.h"
-
-#ifndef server_h_included
-#define server_h_included
 
 /**
  * Stream-oriented socket server
