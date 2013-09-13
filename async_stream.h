@@ -2,34 +2,43 @@
 //  async_stream.h
 //  coroserver
 //
-//  Created by Xu Chen on 13-2-24.
-//  Copyright (c) 2013 Xu Chen. All rights reserved.
+//  Created by Windoze on 13-2-24.
+//  Copyright (c) 2013 0d0a.com. All rights reserved.
 //
 
 #include <streambuf>
+#include <iostream>
 #include <boost/asio/write.hpp>
 #include <boost/asio/spawn.hpp>
-#include <iostream>
+#include <boost/asio/ip/tcp.hpp>
 
 #ifndef async_stream_h_included
 #define async_stream_h_included
 
+/**
+ * Default stream input and output buffer size
+ */
 constexpr size_t bf_size=4096;
 constexpr std::streamsize pb_size=4;
 
-/*
+/**
  * Input/output socket streambuf with coroutine support
  * Yields on buffer overflow or underflow, and gets resumed on io completion
  *
  * @param StreamDescriptor an asychronized stream descriptor, i.e. boost::asio::ip::tcp::socket, or boost::asio::stream_descriptor with native handle
  */
-
 template<typename StreamDescriptor>
 class async_streambuf : public std::streambuf {
 public:
-    async_streambuf(StreamDescriptor &sd,
+    /**
+     * Constructor
+     *
+     * @param sd underlying stream device, such as socket or pipe
+     * @param yield the yield_context used by coroutines
+     */
+    async_streambuf(StreamDescriptor &&sd,
                     boost::asio::yield_context yield)
-    : sd_(sd)
+    : sd_(std::move(sd))
     , yield_(yield)
     , buffer_in_()
     , buffer_out_()
@@ -44,6 +53,20 @@ public:
     // Non-copyable
     async_streambuf(const async_streambuf&) = delete;
     async_streambuf& operator=(const async_streambuf&) = delete;
+    
+    inline bool is_open() const
+    { return sd_.is_open(); }
+    
+    inline void close() {
+        if(sd_.is_open())
+            sd_.close();
+    }
+    
+    inline boost::asio::yield_context yield_context()
+    { return yield_; }
+    
+    inline StreamDescriptor &stream_descriptor()
+    { return sd_; }
     
 protected:
     virtual int_type overflow(int_type c) {
@@ -69,9 +92,8 @@ protected:
             return traits_type::to_int_type( *gptr() );
     }
 
-    virtual int sync() {
-        return nudge_() ? 0 : -1;
-    }
+    virtual int sync()
+    { return nudge_() ? 0 : -1; }
     
 private:
     int_type fetch_() {
@@ -97,20 +119,20 @@ private:
     }
 
     int_type nudge_() {
+        // Don't flush empty buffer
+        std::ptrdiff_t n=pptr()-pbase();
+        if(n<=0) return 0;
         boost::system::error_code ec;
-        char_type *pb=pbase();
-        char_type *pp=pptr();
-        char *bo=buffer_out_;
         boost::asio::async_write(sd_,
-                                 boost::asio::const_buffers_1(pb,
-                                                              pp-pb),
+                                 boost::asio::const_buffers_1(pbase(),
+                                                              n),
                                  yield_[ec]);
-        setp(bo,
-             bo + bf_size - 1);
+        setp(buffer_out_,
+             buffer_out_ + bf_size - 1);
         return ec ? traits_type::eof() : 0;
     }
     
-    StreamDescriptor &sd_;
+    StreamDescriptor sd_;
     boost::asio::yield_context yield_;
     char buffer_in_[bf_size];
     char buffer_out_[bf_size];
@@ -125,13 +147,46 @@ private:
 template<typename StreamDescriptor>
 class async_stream : public std::iostream {
 public:
-    async_stream(StreamDescriptor &sd, boost::asio::yield_context yield)
-    : sbuf_(sd, yield)
+    /**
+     * Constructor
+     *
+     * @param sd underlying stream device, such as socket or pipe
+     * @param yield the yield_context used by coroutines
+     */
+    async_stream(StreamDescriptor &&sd, boost::asio::yield_context yield)
+    : sbuf_(std::move(sd), yield)
     , std::iostream(&sbuf_)
     {}
     
+    /**
+     * Destructor
+     */
+    ~async_stream()
+    { close(); }
+    
+    /**
+     * Close underlying stream device, flushing if necessary
+     */
+    inline void close() {
+        if(sbuf_.is_open()) {
+            flush();
+        }
+        sbuf_.close();
+    }
+    
+    inline bool is_open() const
+    { return sbuf_.is_open(); }
+    
+    inline boost::asio::yield_context yield_context()
+    { return sbuf_.yield_context(); }
+
+    inline StreamDescriptor &stream_descriptor()
+    { return sbuf_.stream_descriptor(); }
+
 private:
     async_streambuf<StreamDescriptor> sbuf_;
 };
+
+typedef async_stream<boost::asio::ip::tcp::socket> async_tcp_stream;
 
 #endif  /* defined(async_stream_h_included) */

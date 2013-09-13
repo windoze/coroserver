@@ -2,8 +2,8 @@
 //  server.cpp
 //  coroserver
 //
-//  Created by Xu Chen on 13-2-24.
-//  Copyright (c) 2013 Xu Chen. All rights reserved.
+//  Created by Windoze on 13-2-24.
+//  Copyright (c) 2013 0d0a.com. All rights reserved.
 //
 
 #include <functional>
@@ -11,10 +11,9 @@
 #include <thread>
 #include <boost/bind.hpp>
 #include <boost/asio/spawn.hpp>
-#include "session.h"
 #include "server.h"
 
-server::server(std::function<bool(std::iostream&, boost::asio::yield_context)> protocol_processor,
+server::server(std::function<bool(async_tcp_stream&)> protocol_processor,
                const std::string &address,
                const std::string &port,
                std::size_t thread_pool_size)
@@ -24,27 +23,6 @@ server::server(std::function<bool(std::iostream&, boost::asio::yield_context)> p
 , signals_(io_service_)
 , acceptor_(io_service_)
 {
-    init(address, port);
-}
-
-server::server(std::function<bool(std::iostream&)> simple_protocol_processor,
-               const std::string &address,
-               const std::string &port,
-               std::size_t thread_pool_size)
-: protocol_processor_(std::bind(&server::simple_processor_wrapper,
-                                this,
-                                std::placeholders::_1,
-                                std::placeholders::_2))
-, proc_simple_(simple_protocol_processor)
-, thread_pool_size_(thread_pool_size)
-, io_service_()
-, signals_(io_service_)
-, acceptor_(io_service_)
-{
-    init(address, port);
-}
-
-void server::init(const std::string &address, const std::string &port) {
     // Register to handle the signals that indicate when the server should exit.
     // It is safe to register for the same signal multiple times in a program,
     // provided all registration for the specified signal is made through Asio.
@@ -53,7 +31,7 @@ void server::init(const std::string &address, const std::string &port) {
 #if defined(SIGQUIT)
     signals_.add(SIGQUIT);
 #endif // defined(SIGQUIT)
-    signals_.async_wait(std::bind(&server::stop, this));
+    signals_.async_wait(std::bind(&server::close, this));
     
     // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
     boost::asio::ip::tcp::resolver resolver(io_service_);
@@ -64,39 +42,49 @@ void server::init(const std::string &address, const std::string &port) {
     acceptor_.bind(endpoint);
     acceptor_.listen();
     
-    start();
+    open();
 }
 
 void server::run() {
     // Create a pool of threads to run all of the io_services.
     std::vector<std::shared_ptr<std::thread> > threads;
-    for (std::size_t i = 0; i < thread_pool_size_; ++i) {
-        // NOTE: It's weird that std::bind doesn't work here
-        std::shared_ptr<std::thread> thread(new std::thread(boost::bind(&boost::asio::io_service::run,
-                                                                        &io_service_)));
-        threads.push_back(thread);
+    for (std::size_t i=0; i<thread_pool_size_; ++i) {
+        // NOTE: It's weird that std::bind doesn't compile here
+        threads.push_back(std::move(std::make_shared<std::thread>(boost::bind(&boost::asio::io_service::run,
+                                                                              &io_service_))));
     }
     
     // Wait for all threads in the pool to exit.
-    for (std::size_t i = 0; i < threads.size(); ++i)
+    for (std::size_t i=0; i<threads.size(); ++i)
         threads[i]->join();
 }
 
-void server::start() {
+void server::open() {
     boost::asio::spawn(io_service_,
-                       [&](boost::asio::yield_context yield)
-                       {
-                           for (;;)
-                           {
+                       [&](boost::asio::yield_context yield) {
+                           for (;;) {
                                boost::system::error_code ec;
                                boost::asio::ip::tcp::socket socket(io_service_);
                                acceptor_.async_accept(socket, yield[ec]);
                                if (!ec)
-                                   std::make_shared<session>(std::move(socket))->start(protocol_processor_);
+                                   handle_connect(std::move(socket));
                            }
                        });
 }
 
-void server::stop() {
-    io_service_.stop();
+void server::close()
+{ io_service_.stop(); }
+
+void server::handle_connect(boost::asio::ip::tcp::socket &&socket) {
+    boost::asio::spawn(boost::asio::strand(io_service_),
+                       [this, &socket](boost::asio::yield_context yield) {
+                           async_tcp_stream s(std::move(socket), yield);
+                           try {
+                               protocol_processor_(s);
+                           } catch (std::exception const& e) {
+                               s << "Exception caught:" << e.what() << std::endl;
+                           } catch(...) {
+                               s << "Unknown exception caught" << std::endl;
+                           }
+                       });
 }

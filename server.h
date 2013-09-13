@@ -2,8 +2,8 @@
 //  server.h
 //  coroserver
 //
-//  Created by Xu Chen on 13-2-24.
-//  Copyright (c) 2013 Xu Chen. All rights reserved.
+//  Created by Windoze on 13-2-24.
+//  Copyright (c) 2013 0d0a.com. All rights reserved.
 //
 
 #include <string>
@@ -11,35 +11,49 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <boost/asio/spawn.hpp>
+#include "async_stream.h"
 
 #ifndef server_h_included
 #define server_h_included
 
+/**
+ * Stream-oriented socket server
+ */
 class server {
 public:
-    server(std::function<bool(std::iostream&)> simple_protocol_processor,
+    /**
+     * Constructor
+     *
+     * @param simple_protocol_processor the functor that processes the stream, a yield_context will be passed to the function along with socket stream
+     * @param address listening address
+     * @param port listening port
+     * @param thread_pool_size number of threads that run simultaneously to process client connections
+     */
+    server(std::function<bool(async_tcp_stream&)> protocol_processor,
            const std::string &address,
            const std::string &port,
            std::size_t thread_pool_size);
-    server(std::function<bool(std::iostream&, boost::asio::yield_context)> protocol_processor,
-           const std::string &address,
-           const std::string &port,
-           std::size_t thread_pool_size);
+    
+    // Non-copyable
     server(const server&) = delete;
     server& operator=(const server&) = delete;
-    void run();
+    
+    /**
+     * Start server
+     */
+    inline void operator()()
+    { run(); }
 
 private:
-    void init(const std::string &address,
-              const std::string &port);
-    void start();
-    void stop();
+    void open();
+    void close();
+    void run();
+    void handle_connect(boost::asio::ip::tcp::socket &&socket);
 
-    inline bool simple_processor_wrapper(std::iostream& s, boost::asio::yield_context) {
-        return proc_simple_(s);
-    }
+    inline bool simple_processor_wrapper(async_tcp_stream &s)
+    { return proc_simple_(s); }
 
-    std::function<bool(std::iostream&, boost::asio::yield_context)> protocol_processor_;
+    std::function<bool(async_tcp_stream&)> protocol_processor_;
     std::function<bool(std::iostream&)> proc_simple_;
     std::size_t thread_pool_size_;
     boost::asio::io_service io_service_;
