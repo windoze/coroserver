@@ -50,11 +50,7 @@ private:
     void run();
     void handle_connect(boost::asio::ip::tcp::socket &&socket);
 
-    inline bool simple_processor_wrapper(async_tcp_stream &s)
-    { return proc_simple_(s); }
-
     std::function<bool(async_tcp_stream&)> protocol_processor_;
-    std::function<bool(std::iostream&)> proc_simple_;
     std::size_t thread_pool_size_;
     boost::asio::io_service io_service_;
     boost::asio::signal_set signals_;
