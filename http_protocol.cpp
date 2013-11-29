@@ -152,7 +152,6 @@ namespace http {
                 }
                 
                 http_parser parser_;
-                http_parser_settings settings_;
                 std::string url_;
                 bool completed_;
                 request_t *req_;
@@ -187,16 +186,19 @@ namespace http {
                 return reinterpret_cast<parser *>(p->data)->on_message_complete();
             }
             
+            static constexpr http_parser_settings settings_={
+                &http::details::request::on_message_begin,
+                &http::details::request::on_url,
+                &http::details::request::on_status_complete,
+                &http::details::request::on_header_field,
+                &http::details::request::on_header_value,
+                &http::details::request::on_headers_complete,
+                &http::details::request::on_body,
+                &http::details::request::on_message_complete,
+            };
+            
             parser::parser() {
                 parser_.data=reinterpret_cast<void*>(this);
-                settings_.on_message_begin=http::details::request::on_message_begin;
-                settings_.on_url=http::details::request::on_url;
-                settings_.on_status_complete=http::details::request::on_status_complete;
-                settings_.on_header_field=http::details::request::on_header_field;
-                settings_.on_header_value=http::details::request::on_header_value;
-                settings_.on_headers_complete=http::details::request::on_headers_complete;
-                settings_.on_body=http::details::request::on_body;
-                settings_.on_message_complete=http::details::request::on_message_complete;
                 http_parser_init(&parser_, HTTP_REQUEST);
             }
             
@@ -238,33 +240,13 @@ namespace http {
         return p.parse(is, req);
     }
 
-    bool handle_request(const http::request_t &req, http::response_t &resp) {
-        using namespace std;
-        ostream &ss=resp.body_stream_;
-        resp.headers_.push_back(http::header_t("Server", "coroserver 0.1"));
-        ss << "<HTML>\r\n<TITLE>Test</TITLE><BODY>\r\n";
-        ss << "<TABLE border=1>\r\n";
-        ss << "<TR><TD>Schema</TD><TD>" << req.schema_ << "</TD></TR>\r\n";
-        ss << "<TR><TD>User Info</TD><TD>" << req.user_info_ << "</TD></TR>\r\n";
-        ss << "<TR><TD>Host</TD><TD>" << req.host_ << "</TD></TR>\r\n";
-        ss << "<TR><TD>Port</TD><TD>" << req.port_ << "</TD></TR>\r\n";
-        ss << "<TR><TD>Path</TD><TD>" << req.path_ << "</TD></TR>\r\n";
-        ss << "<TR><TD>Query</TD><TD>" << req.query_ << "</TD></TR>\r\n";
-        ss << "</TABLE>\r\n";
-        ss << "<TABLE border=1>\r\n";
-        for (auto &h : req.headers_) {
-            ss << "<TR><TD>" << h.first << "</TD><TD>" << h.second << "</TD></TR>\r\n";
-        }
-        ss << "</TABLE></BODY></HTML>\r\n";
-        
-        return true;
-    }
-
     bool protocol_handler(async_tcp_stream &s) {
         using namespace std;
         using namespace boost;
+        bool handle_request(const http::request_t &req, http::response_t &resp);
         
         bool keep_alive=false;
+        
         do {
             http::request_t req;
             if(!http::parse(s, req)) {
@@ -281,7 +263,7 @@ namespace http {
             
             // Returning false from handle_request indicates the handler doesn't want the connection to keep alive
             try {
-                keep_alive = req.keep_alive_ && !(handle_request(req, resp));
+                keep_alive = handle_request(req, resp) && req.keep_alive_;
             } catch(...) {
                 s << "HTTP/1.1 500 Internal Server Error\r\n";
                 break;
@@ -316,6 +298,28 @@ namespace http {
         
         s.flush();
         return false;
+    }
+
+    bool handle_request(const http::request_t &req, http::response_t &resp) {
+        using namespace std;
+        ostream &ss=resp.body_stream_;
+        resp.headers_.push_back(http::header_t("Server", "coroserver 0.1"));
+        ss << "<HTML>\r\n<TITLE>Test</TITLE><BODY>\r\n";
+        ss << "<TABLE border=1>\r\n";
+        ss << "<TR><TD>Schema</TD><TD>" << req.schema_ << "</TD></TR>\r\n";
+        ss << "<TR><TD>User Info</TD><TD>" << req.user_info_ << "</TD></TR>\r\n";
+        ss << "<TR><TD>Host</TD><TD>" << req.host_ << "</TD></TR>\r\n";
+        ss << "<TR><TD>Port</TD><TD>" << req.port_ << "</TD></TR>\r\n";
+        ss << "<TR><TD>Path</TD><TD>" << req.path_ << "</TD></TR>\r\n";
+        ss << "<TR><TD>Query</TD><TD>" << req.query_ << "</TD></TR>\r\n";
+        ss << "</TABLE>\r\n";
+        ss << "<TABLE border=1>\r\n";
+        for (auto &h : req.headers_) {
+            ss << "<TR><TD>" << h.first << "</TD><TD>" << h.second << "</TD></TR>\r\n";
+        }
+        ss << "</TABLE></BODY></HTML>\r\n";
+        
+        return true;
     }
 }   // End of namespace http
 
