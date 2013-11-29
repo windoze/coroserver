@@ -13,47 +13,50 @@
 #include "http_protocol.h"
 
 namespace http {
+    const char *server_name=HTTP_SERVER_NAME "/" HTTP_SERVER_VERSION;
+    
     namespace details {
-        const std::map<int, std::string> status_code_msg_map={
-            {100, "Continue"},
-            {101, "Switching Protocols"},
-            {200, "OK"},
-            {201, "Created"},
-            {202, "Accepted"},
-            {203, "Non-Authoritative Information"},
-            {204, "No Content"},
-            {205, "Reset Content"},
-            {206, "Partial Content"},
-            {300, "Multiple Choices"},
-            {301, "Moved Permanently"},
-            {302, "Found"},
-            {303, "See Other"},
-            {304, "Not Modified"},
-            {307, "Temporary Redirect"},
-            {400, "Bad Request"},
-            {401, "Unauthorized"},
-            {402, "Payment Required"},
-            {403, "Forbidden"},
-            {404, "Not Found"},
-            {405, "Method Not Allowed"},
-            {406, "Not Acceptable"},
-            {407, "Proxy Authentication Required"},
-            {408, "Request Timeout"},
-            {409, "Conflict"},
-            {410, "Gone"},
-            {411, "Length Required"},
-            {412, "Precondition Failed"},
-            {413, "Request Entity Too Large"},
-            {414, "Request-URI Too Long"},
-            {415, "Unsupported Media Type"},
-            {416, "Requested Range Not Satisfiable"},
-            {417, "Expectation Failed"},
-            {500, "Internal Server Error"},
-            {501, "Not Implemented"},
-            {502, "Bad Gateway"},
-            {503, "Service Unavailable"},
-            {504, "Gateway Timeout"},
-            {505, "HTTP Version Not Supported"},
+        const std::map<status_code, std::string> status_code_msg_map={
+            {CONTINUE                       , "Continue"},
+            {SWITCHING_PROTOCOLS            , "Switching Protocols"},
+            {OK                             , "OK"},
+            {CREATED                        , "Created"},
+            {ACCEPTED                       , "Accepted"},
+            {NON_AUTHORITATIVE_INFORMATION  , "Non-Authoritative Information"},
+            {NO_CONTENT                     , "No Content"},
+            {RESET_CONTENT                  , "Reset Content"},
+            {PARTIAL_CONTENT                , "Partial Content"},
+            {MULTIPLE_CHOICES               , "Multiple Choices"},
+            {MOVED_PERMANENTLY              , "Moved Permanently"},
+            {FOUND                          , "Found"},
+            {SEE_OTHER                      , "See Other"},
+            {NOT_MODIFIED                   , "Not Modified"},
+            {USE_PROXY                      , "Use Proxy"},
+            {TEMPORARY_REDIRECT             , "Temporary Redirect"},
+            {BAD_REQUEST                    , "Bad Request"},
+            {UNAUTHORIZED                   , "Unauthorized"},
+            {PAYMENT_REQUIRED               , "Payment Required"},
+            {FORBIDDEN                      , "Forbidden"},
+            {NOT_FOUND                      , "Not Found"},
+            {METHOD_NOT_ALLOWED             , "Method Not Allowed"},
+            {NOT_ACCEPTABLE                 , "Not Acceptable"},
+            {PROXY_AUTHENTICATION_REQUIRED  , "Proxy Authentication Required"},
+            {REQUEST_TIMEOUT                , "Request Timeout"},
+            {CONFLICT                       , "Conflict"},
+            {GONE                           , "Gone"},
+            {LENGTH_REQUIRED                , "Length Required"},
+            {PRECONDITION_FAILED            , "Precondition Failed"},
+            {REQUEST_ENTITY_TOO_LARGE       , "Request Entity Too Large"},
+            {REQUEST_URI_TOO_LONG           , "Request-URI Too Long"},
+            {UNSUPPORTED_MEDIA_TYPE         , "Unsupported Media Type"},
+            {REQUESTED_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable"},
+            {EXPECTATION_FAILED             , "Expectation Failed"},
+            {INTERNAL_SERVER_ERROR          , "Internal Server Error"},
+            {NOT_IMPLEMENTED                , "Not Implemented"},
+            {BAD_GATEWAY                    , "Bad Gateway"},
+            {SERVICE_UNAVAILABLE            , "Service Unavailable"},
+            {GATEWAY_TIMEOUT                , "Gateway Timeout"},
+            {HTTP_VERSION_NOT_SUPPORTED     , "HTTP Version Not Supported"},
         };
         
         namespace request {
@@ -276,12 +279,13 @@ namespace http {
                 string out_buf;
                 ss.swap_vector(out_buf);
                 
-                std::map<int, std::string>::const_iterator i=details::status_code_msg_map.find(resp.code_);
+                std::map<status_code, std::string>::const_iterator i=details::status_code_msg_map.find(resp.code_);
                 if (i==details::status_code_msg_map.end()) {
                     s << "HTTP/1.1 500 Internal Server Error\r\n";
                     break;
                 }
                 s << "HTTP/1.1 " << resp.code_ << ' ' << i->second << "\r\n";
+                s << "Server: " << server_name << "\r\n";
                 for (auto &i : resp.headers_) {
                     s << i.first << ": " << i.second << "\r\n";
                 }
@@ -303,7 +307,6 @@ namespace http {
     bool handle_request(const http::request_t &req, http::response_t &resp) {
         using namespace std;
         ostream &ss=resp.body_stream_;
-        resp.headers_.push_back(http::header_t("Server", "coroserver 0.1"));
         ss << "<HTML>\r\n<TITLE>Test</TITLE><BODY>\r\n";
         ss << "<TABLE border=1>\r\n";
         ss << "<TR><TD>Schema</TD><TD>" << req.schema_ << "</TD></TR>\r\n";
