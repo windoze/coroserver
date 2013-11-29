@@ -190,6 +190,15 @@ public:
 
     inline StreamDescriptor &stream_descriptor()
     { return sbuf_.stream_descriptor(); }
+    
+    // TODO: Find a proper way to retrieve strand object
+    inline boost::asio::strand &strand()
+    { return sbuf_.yield_context().handler_.dispatcher_; }
+    
+    template <typename Function>
+    void spawn(BOOST_ASIO_MOVE_ARG(Function) function) {
+        boost::asio::spawn(strand(), BOOST_ASIO_MOVE_CAST(Function)(function));
+    }
 
 private:
     async_streambuf<StreamDescriptor> sbuf_;
