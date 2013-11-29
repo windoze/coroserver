@@ -95,6 +95,14 @@ protected:
     virtual int sync()
     { return nudge_() ? 0 : -1; }
     
+    virtual std::streamsize showmanyc() {
+        if ( gptr() == egptr() ) {
+            // Getting area is empty
+            return fetch_();
+        }
+        return egptr()-gptr();
+    }
+    
 private:
     int_type fetch_() {
         std::streamsize num = std::min(static_cast<std::streamsize>(gptr() - eback()),
