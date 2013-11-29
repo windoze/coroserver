@@ -115,13 +115,13 @@ namespace http {
                 int on_message_complete() {
                     completed_=true;
                     state_=end;
-                    req_->method_=(http::method)(parser_.method);
+                    req_->method_=(method)(parser_.method);
                     req_->http_major_=parser_.http_major;
                     req_->http_minor_=parser_.http_minor;
                     http_parser_url u;
                     http_parser_parse_url(url_.c_str(),
                                           url_.size(),
-                                          req_->method_==http::CONNECT,
+                                          req_->method_==CONNECT,
                                           &u);
                     // Components for proxy requests
                     // NOTE: Schema, user info, host, and port may only exist in proxy requests
@@ -190,14 +190,14 @@ namespace http {
             }
             
             static constexpr http_parser_settings settings_={
-                &http::details::request::on_message_begin,
-                &http::details::request::on_url,
-                &http::details::request::on_status_complete,
-                &http::details::request::on_header_field,
-                &http::details::request::on_header_value,
-                &http::details::request::on_headers_complete,
-                &http::details::request::on_body,
-                &http::details::request::on_message_complete,
+                &on_message_begin,
+                &on_url,
+                &on_status_complete,
+                &on_header_field,
+                &on_header_value,
+                &on_headers_complete,
+                &on_body,
+                &on_message_complete,
             };
             
             parser::parser() {
@@ -205,7 +205,7 @@ namespace http {
                 http_parser_init(&parser_, HTTP_REQUEST);
             }
             
-            bool parser::parse(std::istream &is, http::request_t &req) {
+            bool parser::parse(std::istream &is, request_t &req) {
                 state_=none;
                 req.closed_=false;
                 constexpr int buf_size=1024;
@@ -246,47 +246,46 @@ namespace http {
     bool protocol_handler(async_tcp_stream_ptr s) {
         using namespace std;
         using namespace boost;
-        bool handle_request(http::request_ptr req, http::response_ptr resp);
+        bool handle_request(session_ptr);
         
         bool keep_alive=false;
         
         do {
-            http::request_ptr req(new http::request_t);
-            if(!http::parse(*s, *req)) {
+            interprocess::basic_ovectorstream<string> ss;
+            session_ptr session(new session_t(ss, s));
+            
+            if (session->closed()) {
+                return false;
+            }
+            
+            if(session->bad_request()) {
                 *s << "HTTP/1.1 400 Bad request\r\n";
                 return false;
             }
             
-            if (req->closed_) {
-                return false;
-            }
-            
-            boost::interprocess::basic_ovectorstream<std::string> ss;
-            http::response_ptr resp(new response_t(ss, s));
-            
             // Returning false from handle_request indicates the handler doesn't want the connection to keep alive
             try {
-                keep_alive = handle_request(req, resp) && req->keep_alive_;
+                keep_alive = handle_request(session) && session->keep_alive();
             } catch(...) {
                 *s << "HTTP/1.1 500 Internal Server Error\r\n";
                 break;
             }
             
-            if (resp->raw_) {
+            if (session->raw()) {
                 // Do nothing here
                 // Handler handles whole HTTP response by itself, include status, headers, and body
             } else {
                 string out_buf;
                 ss.swap_vector(out_buf);
                 
-                std::map<status_code, std::string>::const_iterator i=details::status_code_msg_map.find(resp->code_);
+                map<status_code, string>::const_iterator i=details::status_code_msg_map.find(session->response_.code_);
                 if (i==details::status_code_msg_map.end()) {
                     *s << "HTTP/1.1 500 Internal Server Error\r\n";
                     break;
                 }
-                *s << "HTTP/1.1 " << resp->code_ << ' ' << i->second << "\r\n";
+                *s << "HTTP/1.1 " << session->response_.code_ << ' ' << i->second << "\r\n";
                 *s << "Server: " << server_name << "\r\n";
-                for (auto &i : resp->headers_) {
+                for (auto &i : session->response_.headers_) {
                     *s << i.first << ": " << i.second << "\r\n";
                 }
                 if (keep_alive) {
@@ -304,22 +303,22 @@ namespace http {
         return false;
     }
 
-    bool handle_request(http::request_ptr req, http::response_ptr resp) {
+    bool handle_request(session_ptr session) {
         if(1) {
-            resp->raw_stream_->spawn([req, resp](boost::asio::yield_context yield){
+            session->spawn([session](boost::asio::yield_context yield){
                 using namespace std;
-                ostream &ss=resp->body_stream_;
+                ostream &ss=session->body_stream();
                 ss << "<HTML>\r\n<TITLE>Test</TITLE><BODY>\r\n";
                 ss << "<TABLE border=1>\r\n";
-                ss << "<TR><TD>Schema</TD><TD>" << req->schema_ << "</TD></TR>\r\n";
-                ss << "<TR><TD>User Info</TD><TD>" << req->user_info_ << "</TD></TR>\r\n";
-                ss << "<TR><TD>Host</TD><TD>" << req->host_ << "</TD></TR>\r\n";
-                ss << "<TR><TD>Port</TD><TD>" << req->port_ << "</TD></TR>\r\n";
-                ss << "<TR><TD>Path</TD><TD>" << req->path_ << "</TD></TR>\r\n";
-                ss << "<TR><TD>Query</TD><TD>" << req->query_ << "</TD></TR>\r\n";
+                ss << "<TR><TD>Schema</TD><TD>" << session->request_.schema_ << "</TD></TR>\r\n";
+                ss << "<TR><TD>User Info</TD><TD>" << session->request_.user_info_ << "</TD></TR>\r\n";
+                ss << "<TR><TD>Host</TD><TD>" << session->request_.host_ << "</TD></TR>\r\n";
+                ss << "<TR><TD>Port</TD><TD>" << session->request_.port_ << "</TD></TR>\r\n";
+                ss << "<TR><TD>Path</TD><TD>" << session->request_.path_ << "</TD></TR>\r\n";
+                ss << "<TR><TD>Query</TD><TD>" << session->request_.query_ << "</TD></TR>\r\n";
                 ss << "</TABLE>\r\n";
                 ss << "<TABLE border=1>\r\n";
-                for (auto &h : req->headers_) {
+                for (auto &h : session->request_.headers_) {
                     ss << "<TR><TD>" << h.first << "</TD><TD>" << h.second << "</TD></TR>\r\n";
                 }
                 ss << "</TABLE></BODY></HTML>\r\n";
@@ -328,18 +327,18 @@ namespace http {
             });
         } else {
             using namespace std;
-            ostream &ss=resp->body_stream_;
+            ostream &ss=session->body_stream_;
             ss << "<HTML>\r\n<TITLE>Test</TITLE><BODY>\r\n";
             ss << "<TABLE border=1>\r\n";
-            ss << "<TR><TD>Schema</TD><TD>" << req->schema_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>User Info</TD><TD>" << req->user_info_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Host</TD><TD>" << req->host_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Port</TD><TD>" << req->port_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Path</TD><TD>" << req->path_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Query</TD><TD>" << req->query_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>Schema</TD><TD>" << session->request_.schema_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>User Info</TD><TD>" << session->request_.user_info_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>Host</TD><TD>" << session->request_.host_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>Port</TD><TD>" << session->request_.port_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>Path</TD><TD>" << session->request_.path_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>Query</TD><TD>" << session->request_.query_ << "</TD></TR>\r\n";
             ss << "</TABLE>\r\n";
             ss << "<TABLE border=1>\r\n";
-            for (auto &h : req->headers_) {
+            for (auto &h : session->request_.headers_) {
                 ss << "<TR><TD>" << h.first << "</TD><TD>" << h.second << "</TD></TR>\r\n";
             }
             ss << "</TABLE></BODY></HTML>\r\n";

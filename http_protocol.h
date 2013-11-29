@@ -118,8 +118,6 @@ namespace http {
         bool closed_;
     };
     
-    typedef std::shared_ptr<request_t> request_ptr;
-    
     /**
      * Parse HTTP request
      *
@@ -132,12 +130,12 @@ namespace http {
         /**
          * Set to true means the response has been processed by the handler, no further actions needed
          */
-        bool raw_;
+        bool raw_=false;
         
         /**
          * HTTP status code
          */
-        status_code code_;
+        status_code code_=OK;
         
         /**
          * HTTP Headers
@@ -148,26 +146,69 @@ namespace http {
          * Should the body be compressed
          */
         bool compress_;
+    };
+    
+    struct session_t {
+        session_t(std::ostream &body_stream, async_tcp_stream_ptr raw_stream)
+        : body_stream_(body_stream)
+        , raw_stream_(raw_stream)
+        , bad_request_(parse(*raw_stream, request_))
+        {}
 
+        inline bool bad_request() const
+        { return bad_request_; }
+        
+        inline bool closed() const
+        { return request_.closed_; }
+        
+        inline bool raw() const
+        { return response_.raw_; }
+        
+        inline void raw(bool r)
+        { response_.raw_=r; }
+        
+        inline bool keep_alive() const
+        { return request_.keep_alive_; }
+        
+        inline std::ostream &body_stream()
+        { return body_stream_; }
+        
+        inline async_tcp_stream &raw_stream()
+        { return *raw_stream_; }
+        
+        template <typename Function>
+        void spawn(BOOST_ASIO_MOVE_ARG(Function) function) {
+            boost::asio::spawn(raw_stream().strand(), BOOST_ASIO_MOVE_CAST(Function)(function));
+        }
+
+        // private:
+        /**
+         * HTTP request
+         */
+        request_t request_;
+        
+        /**
+         * HTTP response
+         */
+        response_t response_;
+        
         /**
          * Output stream for response body, only used when raw_ is false
          */
         std::ostream &body_stream_;
-
+        
         /**
          * Output stream for raw response, handler needs to output status line, headers, body, etc by itself.
          */
         async_tcp_stream_ptr raw_stream_;
-        
-        response_t(std::ostream &body_stream, async_tcp_stream_ptr raw_stream)
-        : raw_(false)
-        , code_(OK)
-        , body_stream_(body_stream)
-        , raw_stream_(raw_stream)
-        {}
+
+        /**
+         * Indicate if the request is malformed
+         */
+        bool bad_request_=false;
     };
     
-    typedef std::shared_ptr<response_t> response_ptr;
+    typedef std::shared_ptr<session_t> session_ptr;
     
     // TODO:
     /**
