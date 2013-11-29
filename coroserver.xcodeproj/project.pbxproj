@@ -66,11 +66,11 @@
 		2DB9AE4316DB01AB0001779C = {
 			isa = PBXGroup;
 			children = (
-				2DCE5ED918487D35009284E6 /* libboost_regex-mt.a */,
 				2DCE5ED81847273F009284E6 /* http-parser */,
 				2DCEAB5D17E0885C00204B89 /* libboost_system-mt.a */,
 				2DCEAB5B17E0794C00204B89 /* libboost_coroutine-mt.a */,
 				2DCEAB5517E0722400204B89 /* libboost_context-mt.a */,
+				2DCE5ED918487D35009284E6 /* libboost_regex-mt.a */,
 				2DB9AE7116DB0B310001779C /* .gitignore */,
 				2DB9AE7016DB0A2D0001779C /* README.md */,
 				2DB9AE6F16DB029D0001779C /* CMakeLists.txt */,
