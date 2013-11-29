@@ -29,7 +29,7 @@ public:
      * @param port listening port
      * @param thread_pool_size number of threads that run simultaneously to process client connections
      */
-    server(std::function<bool(async_tcp_stream&)> protocol_processor,
+    server(std::function<bool(async_tcp_stream_ptr)> protocol_processor,
            const std::string &address,
            const std::string &port,
            std::size_t thread_pool_size);
@@ -50,7 +50,7 @@ private:
     void run();
     void handle_connect(boost::asio::ip::tcp::socket &&socket);
 
-    std::function<bool(async_tcp_stream&)> protocol_processor_;
+    std::function<bool(async_tcp_stream_ptr)> protocol_processor_;
     std::size_t thread_pool_size_;
     boost::asio::io_service io_service_;
     boost::asio::signal_set signals_;

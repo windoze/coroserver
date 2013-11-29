@@ -13,7 +13,7 @@
 #include <boost/asio/spawn.hpp>
 #include "server.h"
 
-server::server(std::function<bool(async_tcp_stream&)> protocol_processor,
+server::server(std::function<bool(async_tcp_stream_ptr)> protocol_processor,
                const std::string &address,
                const std::string &port,
                std::size_t thread_pool_size)
@@ -78,13 +78,13 @@ void server::close()
 void server::handle_connect(boost::asio::ip::tcp::socket &&socket) {
     boost::asio::spawn(boost::asio::strand(io_service_),
                        [this, &socket](boost::asio::yield_context yield) {
-                           async_tcp_stream s(std::move(socket), yield);
+                           async_tcp_stream_ptr s(new async_tcp_stream(std::move(socket), yield));
                            try {
                                protocol_processor_(s);
                            } catch (std::exception const& e) {
-                               s << "Exception caught:" << e.what() << std::endl;
+                               *s << "Exception caught:" << e.what() << std::endl;
                            } catch(...) {
-                               s << "Unknown exception caught" << std::endl;
+                               *s << "Unknown exception caught" << std::endl;
                            }
                        });
 }

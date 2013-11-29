@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <memory>
 #include "async_stream.h"
 
 namespace http {
@@ -117,6 +118,8 @@ namespace http {
         bool closed_;
     };
     
+    typedef std::shared_ptr<request_t> request_ptr;
+    
     /**
      * Parse HTTP request
      *
@@ -154,15 +157,17 @@ namespace http {
         /**
          * Output stream for raw response, handler needs to output status line, headers, body, etc by itself.
          */
-        std::ostream &raw_stream_;
+        async_tcp_stream_ptr raw_stream_;
         
-        response_t(std::ostream &body_stream, std::ostream &raw_stream)
+        response_t(std::ostream &body_stream, async_tcp_stream_ptr raw_stream)
         : raw_(false)
         , code_(OK)
         , body_stream_(body_stream)
         , raw_stream_(raw_stream)
         {}
     };
+    
+    typedef std::shared_ptr<response_t> response_ptr;
     
     // TODO:
     /**
@@ -179,7 +184,7 @@ namespace http {
      * @param s the socket stream
      * @param yield the yield_context, can be used to create new connections
      */
-    bool protocol_handler(async_tcp_stream& s);
+    bool protocol_handler(async_tcp_stream_ptr s);
     
 }   // End of namespace http
 

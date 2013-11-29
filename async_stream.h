@@ -11,6 +11,7 @@
 
 #include <streambuf>
 #include <iostream>
+#include <memory>
 #include <boost/asio/write.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -205,5 +206,7 @@ private:
 };
 
 typedef async_stream<boost::asio::ip::tcp::socket> async_tcp_stream;
+
+typedef std::shared_ptr<async_tcp_stream> async_tcp_stream_ptr;
 
 #endif  /* defined(async_stream_h_included) */
