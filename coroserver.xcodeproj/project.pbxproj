@@ -10,6 +10,8 @@
 		2D40A6D017E0B88B00282132 /* http_protocol.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D40A6CE17E0B88B00282132 /* http_protocol.cpp */; };
 		2DB9AE6316DB01CF0001779C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5B16DB01CF0001779C /* main.cpp */; };
 		2DB9AE6416DB01CF0001779C /* server.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5C16DB01CF0001779C /* server.cpp */; };
+		2DCE5ED71847272C009284E6 /* http_parser.c in Sources */ = {isa = PBXBuildFile; fileRef = 2DCE5ED51847272C009284E6 /* http_parser.c */; };
+		2DCE5EDA18487D35009284E6 /* libboost_regex-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCE5ED918487D35009284E6 /* libboost_regex-mt.a */; };
 		2DCEAB5817E0722400204B89 /* libboost_context-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5517E0722400204B89 /* libboost_context-mt.a */; };
 		2DCEAB5C17E0794C00204B89 /* libboost_coroutine-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5B17E0794C00204B89 /* libboost_coroutine-mt.a */; };
 		2DCEAB5E17E0885C00204B89 /* libboost_system-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DCEAB5D17E0885C00204B89 /* libboost_system-mt.a */; };
@@ -38,9 +40,12 @@
 		2DB9AE6F16DB029D0001779C /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		2DB9AE7016DB0A2D0001779C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
 		2DB9AE7116DB0B310001779C /* .gitignore */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
-		2DCEAB5517E0722400204B89 /* libboost_context-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_context-mt.a"; path = "../../../../opt/local/lib/libboost_context-mt.a"; sourceTree = "<group>"; };
-		2DCEAB5B17E0794C00204B89 /* libboost_coroutine-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_coroutine-mt.a"; path = "../../../../opt/local/lib/libboost_coroutine-mt.a"; sourceTree = "<group>"; };
-		2DCEAB5D17E0885C00204B89 /* libboost_system-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_system-mt.a"; path = "../../../../opt/local/lib/libboost_system-mt.a"; sourceTree = "<group>"; };
+		2DCE5ED51847272C009284E6 /* http_parser.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http_parser.c; path = "http-parser/http_parser.c"; sourceTree = "<group>"; };
+		2DCE5ED61847272C009284E6 /* http_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http_parser.h; path = "http-parser/http_parser.h"; sourceTree = "<group>"; };
+		2DCE5ED918487D35009284E6 /* libboost_regex-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_regex-mt.a"; path = "/usr/local/Cellar/boost/1.55.0/lib/libboost_regex-mt.a"; sourceTree = "<group>"; };
+		2DCEAB5517E0722400204B89 /* libboost_context-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_context-mt.a"; path = "/usr/local/lib/libboost_context-mt.a"; sourceTree = "<group>"; };
+		2DCEAB5B17E0794C00204B89 /* libboost_coroutine-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_coroutine-mt.a"; path = "/usr/local/lib/libboost_coroutine-mt.a"; sourceTree = "<group>"; };
+		2DCEAB5D17E0885C00204B89 /* libboost_system-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_system-mt.a"; path = "/usr/local/lib/libboost_system-mt.a"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +53,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2DCE5EDA18487D35009284E6 /* libboost_regex-mt.a in Frameworks */,
 				2DCEAB5E17E0885C00204B89 /* libboost_system-mt.a in Frameworks */,
 				2DCEAB5C17E0794C00204B89 /* libboost_coroutine-mt.a in Frameworks */,
 				2DCEAB5817E0722400204B89 /* libboost_context-mt.a in Frameworks */,
@@ -60,6 +66,8 @@
 		2DB9AE4316DB01AB0001779C = {
 			isa = PBXGroup;
 			children = (
+				2DCE5ED918487D35009284E6 /* libboost_regex-mt.a */,
+				2DCE5ED81847273F009284E6 /* http-parser */,
 				2DCEAB5D17E0885C00204B89 /* libboost_system-mt.a */,
 				2DCEAB5B17E0794C00204B89 /* libboost_coroutine-mt.a */,
 				2DCEAB5517E0722400204B89 /* libboost_context-mt.a */,
@@ -98,6 +106,15 @@
 				2D40A6CF17E0B88B00282132 /* http_protocol.h */,
 			);
 			name = include;
+			sourceTree = "<group>";
+		};
+		2DCE5ED81847273F009284E6 /* http-parser */ = {
+			isa = PBXGroup;
+			children = (
+				2DCE5ED51847272C009284E6 /* http_parser.c */,
+				2DCE5ED61847272C009284E6 /* http_parser.h */,
+			);
+			name = "http-parser";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -151,6 +168,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2DCE5ED71847272C009284E6 /* http_parser.c in Sources */,
 				2DB9AE6316DB01CF0001779C /* main.cpp in Sources */,
 				2DB9AE6416DB01CF0001779C /* server.cpp in Sources */,
 				2D40A6D017E0B88B00282132 /* http_protocol.cpp in Sources */,
@@ -164,7 +182,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -184,7 +202,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = /opt/local/include;
+				HEADER_SEARCH_PATHS = /usr/local/include;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -197,7 +215,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -211,7 +229,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = /opt/local/include;
+				HEADER_SEARCH_PATHS = /usr/local/include;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-ftemplate-depth=256",
@@ -222,7 +240,10 @@
 		2DB9AE5616DB01AB0001779C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				LIBRARY_SEARCH_PATHS = /opt/local/lib;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/lib,
+					/usr/local/Cellar/boost/1.55.0/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -230,7 +251,10 @@
 		2DB9AE5716DB01AB0001779C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				LIBRARY_SEARCH_PATHS = /opt/local/lib;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/lib,
+					/usr/local/Cellar/boost/1.55.0/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
