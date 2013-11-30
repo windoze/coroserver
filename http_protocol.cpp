@@ -11,6 +11,7 @@
 #include <boost/interprocess/streams/vectorstream.hpp>
 #include "http-parser/http_parser.h"
 #include "http_protocol.h"
+#include "condition_variable.hpp"
 
 namespace http {
     const char *server_name=HTTP_SERVER_NAME "/" HTTP_SERVER_VERSION;
@@ -77,38 +78,38 @@ namespace http {
                     return 0;
                 }
                 int on_url(const char *at, size_t length) {
-                    if(state_!=url)
-                        url_.assign(at, length);
-                    else
+                    if(state_==url)
                         url_.append(at, length);
+                    else
+                        url_.assign(at, length);
                     state_=url;
                     return 0;
                 }
                 int on_status_complete() { return 0; }
                 int on_header_field(const char *at, size_t length) {
-                    if (state_!=field) {
+                    if (state_==field) {
+                        req_->headers_.rbegin()->first.append(at, length);
+                    } else {
                         req_->headers_.push_back(header_t());
                         req_->headers_.rbegin()->first.assign(at, length);
-                    } else {
-                        req_->headers_.rbegin()->first.append(at, length);
                     }
                     state_=field;
                     return 0;
                 }
                 int on_header_value(const char *at, size_t length) {
-                    if (state_!=value)
-                        req_->headers_.rbegin()->second.assign(at, length);
-                    else
+                    if (state_==value)
                         req_->headers_.rbegin()->second.append(at, length);
+                    else
+                        req_->headers_.rbegin()->second.assign(at, length);
                     state_=value;
                     return 0;
                 }
                 int on_headers_complete() { return 0; }
                 int on_body(const char *at, size_t length) {
-                    if (state_!=body)
-                        req_->body_.assign(at, length);
-                    else
+                    if (state_==body)
                         req_->body_.append(at, length);
+                    else
+                        req_->body_.assign(at, length);
                     state_=body;
                     return 0;
                 }
@@ -232,7 +233,7 @@ namespace http {
                 }
                 // Finishing
                 req_->keep_alive_=http_should_keep_alive(&parser_);
-                
+                req_->valid_=completed_;
                 return completed_;
             }
         }   // End of namespace request
@@ -246,9 +247,35 @@ namespace http {
         return p.parse(is, req);
     }
 
+    std::ostream &operator<<(std::ostream &s, response_t &resp) {
+        std::map<status_code, std::string>::const_iterator i=details::status_code_msg_map.find(resp.code_);
+        if (i==details::status_code_msg_map.end()) {
+            // Unknown HTTP status code
+            s << "HTTP/1.1 500 Internal Server Error\r\n";
+        } else {
+            resp.body_.clear();
+            resp.body_stream_.swap_vector(resp.body_);
+            char buf[100];
+            sprintf(buf, "%lu", resp.body_.size());
+            resp.headers_.push_back(header_t("Content-Length", buf));
+            s << "HTTP/1.1 " << resp.code_ << ' ' << i->second << "\r\n";
+            s << "Server: " << server_name << "\r\n";
+            for (auto &i : resp.headers_) {
+                s << i.first << ": " << i.second << "\r\n";
+            }
+            s << "\r\n" << resp.body_;
+        }
+        return s;
+    }
+    
     bool parse(std::istream &is, response_t &resp) {
         // TODO:
         return false;
+    }
+    
+    std::ostream &operator<<(std::ostream &s, request_t &req) {
+        // TODO:
+        return s;
     }
     
     bool protocol_handler(async_tcp_stream_ptr s) {
@@ -261,17 +288,19 @@ namespace http {
         do {
             session_ptr session(new session_t(s));
             
+            *s >> session->request_;
+            
             if (session->closed()) {
                 return false;
             }
             
-            if(!session->parse_request()) {
+            if(!session->request_.valid_) {
                 *s << "HTTP/1.1 400 Bad request\r\n";
                 return false;
             }
             
-            // Returning false from handle_request indicates the handler doesn't want the connection to keep alive
             try {
+                // Returning false from handle_request indicates the handler doesn't want the connection to keep alive
                 keep_alive = handle_request(session) && session->keep_alive();
             } catch(...) {
                 *s << "HTTP/1.1 500 Internal Server Error\r\n";
@@ -282,30 +311,9 @@ namespace http {
                 // Do nothing here
                 // Handler handles whole HTTP response by itself, include status, headers, and body
             } else {
-                string out_buf;
-                session->body_stream().swap_vector(out_buf);
-                
-                map<status_code, string>::const_iterator i=details::status_code_msg_map.find(session->response_.code_);
-                if (i==details::status_code_msg_map.end()) {
-                    *s << "HTTP/1.1 500 Internal Server Error\r\n";
-                    break;
-                }
-                *s << "HTTP/1.1 " << session->response_.code_ << ' ' << i->second << "\r\n";
-                *s << "Server: " << server_name << "\r\n";
-                for (auto &i : session->response_.headers_) {
-                    *s << i.first << ": " << i.second << "\r\n";
-                }
-                if (keep_alive) {
-                    *s << "Connection: keep-alive\r\n";
-                } else {
-                    *s << "Connection: close\r\n";
-                }
-                *s << "Content-Length: " << out_buf.size() << "\r\n\r\n";
-                *s << out_buf;
+                *s << session->response_;
             }
             s->flush();
-            
-            // 
         } while (keep_alive);
         
         s->flush();
@@ -313,30 +321,10 @@ namespace http {
     }
 
     bool handle_request(session_ptr session) {
-        if(0) {
-            session->spawn([session](boost::asio::yield_context yield){
-                using namespace std;
-                ostream &ss=session->body_stream();
-                ss << "<HTML>\r\n<TITLE>Test</TITLE><BODY>\r\n";
-                ss << "<TABLE border=1>\r\n";
-                ss << "<TR><TD>Schema</TD><TD>" << session->request_.schema_ << "</TD></TR>\r\n";
-                ss << "<TR><TD>User Info</TD><TD>" << session->request_.user_info_ << "</TD></TR>\r\n";
-                ss << "<TR><TD>Host</TD><TD>" << session->request_.host_ << "</TD></TR>\r\n";
-                ss << "<TR><TD>Port</TD><TD>" << session->request_.port_ << "</TD></TR>\r\n";
-                ss << "<TR><TD>Path</TD><TD>" << session->request_.path_ << "</TD></TR>\r\n";
-                ss << "<TR><TD>Query</TD><TD>" << session->request_.query_ << "</TD></TR>\r\n";
-                ss << "</TABLE>\r\n";
-                ss << "<TABLE border=1>\r\n";
-                for (auto &h : session->request_.headers_) {
-                    ss << "<TR><TD>" << h.first << "</TD><TD>" << h.second << "</TD></TR>\r\n";
-                }
-                ss << "</TABLE></BODY></HTML>\r\n";
-                
-                return true;
-            });
-        } else {
+        boost::asio::condition_flag flag(session->strand());
+        session->strand().post([session, &flag](){
             using namespace std;
-            ostream &ss=session->body_stream_;
+            ostream &ss=session->response_.body_stream_;
             ss << "<HTML>\r\n<TITLE>Test</TITLE><BODY>\r\n";
             ss << "<TABLE border=1>\r\n";
             ss << "<TR><TD>Schema</TD><TD>" << session->request_.schema_ << "</TD></TR>\r\n";
@@ -351,7 +339,9 @@ namespace http {
                 ss << "<TR><TD>" << h.first << "</TD><TD>" << h.second << "</TD></TR>\r\n";
             }
             ss << "</TABLE></BODY></HTML>\r\n";
-        }
+            flag=true;
+        });
+        flag.wait(session->yield_context());
         return true;
     }
 }   // End of namespace http

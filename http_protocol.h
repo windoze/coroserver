@@ -100,38 +100,129 @@ namespace http {
         HTTP_VERSION_NOT_SUPPORTED      =505,
     };
     
+    typedef boost::interprocess::basic_ovectorstream<std::string> body_stream_t;
     typedef std::pair<std::string, std::string> header_t;
     typedef std::vector<header_t> headers_t;
     
     struct request_t {
+        /**
+         * Valid flag
+         */
+        bool valid_;
+        
+        /**
+         * HTTP Major version
+         */
         short http_major_;
+        
+        /**
+         * HTTP Minor version
+         */
         short http_minor_;
+        
+        /**
+         * Method
+         */
         method method_;
+        
+        /**
+         * Schema in URL, may only exist in proxy requests
+         */
         std::string schema_;
-        std::string host_;
-        int port_;
-        std::string path_;
-        std::string query_;
+        
+        /**
+         * User info in URL, may only exist in proxy requests
+         */
         std::string user_info_;
+
+        /**
+         * Host in URL, may only exist in proxy requests
+         */
+        std::string host_;
+        
+        /**
+         * Port in URL, may only exist in proxy requests
+         */
+        int port_;
+        
+        /**
+         * Path in URL
+         */
+        std::string path_;
+        
+        /**
+         * Query part in URL
+         */
+        std::string query_;
+
+        /**
+         * HTTP Headers
+         */
         headers_t headers_;
-        std::string body_;
+
+        /**
+         * Keep-alive flag
+         */
         bool keep_alive_;
+
+        /**
+         * True if the connection closed before reading/parsing
+         */
         bool closed_;
+
+        /**
+         * Request body
+         */
+        std::string body_;
+
+        /**
+         * Output stream for response body
+         */
+        body_stream_t body_stream_;
     };
     
     /**
      * Parse HTTP request
      *
-     * @param is the socket stream
+     * @param is the input stream
      * @param req the HTTP request struct to be filled
      */
     bool parse(std::istream &is, request_t &req);
     
+    /**
+     * Read HTTP request from input stream
+     *
+     * @param is the input stream
+     * @param req the HTTP request struct to be filled
+     */
+    inline std::istream &operator >>(std::istream &is, request_t &req) {
+        parse(is, req);
+        return is;
+    }
+    
+    /**
+     * Write HTTP request to output stream
+     *
+     * @param os the output stream
+     * @param req the HTTP request struct to be written
+     */
+    std::ostream &operator<<(std::ostream &os, const request_t &req);
+
     struct response_t {
+        /**
+         * Valid flag
+         */
+        bool valid_;
+
         /**
          * HTTP status code
          */
         status_code code_=OK;
+        
+        /**
+         * HTTP status message
+         */
+        std::string status_message_;
         
         /**
          * HTTP Headers
@@ -144,59 +235,103 @@ namespace http {
         std::string body_;
 
         /**
-         * Should the response be compressed
+         * Output stream for response body
          */
-        bool compress_;
+        body_stream_t body_stream_;
     };
     
+    // TODO:
     /**
-     * Parse HTTP request
+     * Parse HTTP response
      *
-     * @param is the socket stream
-     * @param req the HTTP request struct to be filled
+     * @param is the input stream
+     * @param req the HTTP response struct to be filled
      */
     bool parse(std::istream &is, response_t &resp);
     
+    /**
+     * Read HTTP response from input stream
+     *
+     * @param is the input stream
+     * @param resp the HTTP response struct to be filled
+     */
+    inline std::istream &operator >>(std::istream &is, response_t &resp) {
+        parse(is, resp);
+        return is;
+    }
+    
+    /**
+     * Write HTTP response to output stream
+     *
+     * @param os the output stream
+     * @param resp the HTTP response struct to be written
+     */
+    std::ostream &operator<<(std::ostream &os, const response_t &resp);
+    
+    /**
+     * Represent a HTTP session, which is a request/response roundtrip
+     */
     struct session_t {
-        typedef boost::interprocess::basic_ovectorstream<std::string> body_stream_t;
-        
+        /**
+         * Constructor
+         *
+         * @param raw_stream the socket stream
+         */
         session_t(async_tcp_stream_ptr raw_stream)
         : raw_stream_(raw_stream)
         {}
 
-        inline bool parse_request()
-        { return parse(raw_stream(), request_); }
-        
-        inline bool parse_response()
-        { return parse(raw_stream(), response_); }
-            
+        /**
+         * Return true means the underlying connection is closed
+         */
         inline bool closed() const
         { return request_.closed_; }
         
+        /**
+         * Return true means the response should be handled by the request handler
+         */
         inline bool raw() const
         { return raw_; }
         
+        /**
+         * Set raw mode
+         */
         inline void raw(bool r)
         { raw_=r; }
         
+        /**
+         * Return true means the remote peer wants the connection keep alive
+         */
         inline bool keep_alive() const
         { return request_.keep_alive_; }
         
-        inline body_stream_t &body_stream()
-        { return body_stream_; }
-        
+        /**
+         * Returns underlying socket stream
+         */
         inline async_tcp_stream &raw_stream()
         { return *raw_stream_; }
         
+        /**
+         * The strand object accociated to the socket
+         */
         inline boost::asio::strand &strand()
         { return raw_stream().strand(); }
         
+        /**
+         * The io_service object accociated to the socket
+         */
         inline boost::asio::io_service &io_service()
         { return raw_stream().strand().get_io_service(); }
         
+        /**
+         * The yield context accociated to the coroutine handling this session/connection
+         */
         inline boost::asio::yield_context yield_context()
         { return raw_stream().yield_context(); }
         
+        /**
+         * Spawn new coroutine within the strand
+         */
         template <typename Function>
         void spawn(BOOST_ASIO_MOVE_ARG(Function) function) {
             boost::asio::spawn(strand(), BOOST_ASIO_MOVE_CAST(Function)(function));
@@ -219,16 +354,6 @@ namespace http {
         bool raw_=false;
         
         /**
-         * Set to true means the process has been deferred
-         */
-        bool deferred_=false;
-
-        /**
-         * Output stream for response body, only used when raw_ is false
-         */
-        body_stream_t body_stream_;
-        
-        /**
          * Output stream for raw response, handler needs to output status line, headers, body, etc by itself.
          */
         async_tcp_stream_ptr raw_stream_;
@@ -236,15 +361,6 @@ namespace http {
     
     typedef std::shared_ptr<session_t> session_ptr;
     
-    // TODO:
-    /**
-     * Parse HTTP response
-     *
-     * @param is the socket stream
-     * @param req the HTTP response struct to be filled
-     */
-    // bool parse(std::istream &is, response_t &resp);
-
     /**
      * Handle HTTP protocol handler
      *
