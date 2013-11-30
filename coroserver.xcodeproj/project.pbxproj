@@ -32,6 +32,7 @@
 /* Begin PBXFileReference section */
 		2D40A6CE17E0B88B00282132 /* http_protocol.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = http_protocol.cpp; sourceTree = "<group>"; };
 		2D40A6CF17E0B88B00282132 /* http_protocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = http_protocol.h; sourceTree = "<group>"; };
+		2DABC3FD184A44E6003E683E /* condition_variable.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = condition_variable.hpp; sourceTree = "<group>"; };
 		2DB9AE4C16DB01AB0001779C /* coroserver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = coroserver; sourceTree = BUILT_PRODUCTS_DIR; };
 		2DB9AE5A16DB01CF0001779C /* async_stream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = async_stream.h; sourceTree = "<group>"; };
 		2DB9AE5B16DB01CF0001779C /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
@@ -104,6 +105,7 @@
 				2DB9AE5A16DB01CF0001779C /* async_stream.h */,
 				2DB9AE5D16DB01CF0001779C /* server.h */,
 				2D40A6CF17E0B88B00282132 /* http_protocol.h */,
+				2DABC3FD184A44E6003E683E /* condition_variable.hpp */,
 			);
 			name = include;
 			sourceTree = "<group>";
