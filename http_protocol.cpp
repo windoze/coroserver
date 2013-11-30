@@ -236,6 +236,9 @@ namespace http {
                 return completed_;
             }
         }   // End of namespace request
+        namespace response {
+            // TODO:
+        }   // End of namespace response
     }   // End of namespace details
     
     bool parse(std::istream &is, request_t &req) {
@@ -243,6 +246,11 @@ namespace http {
         return p.parse(is, req);
     }
 
+    bool parse(std::istream &is, response_t &resp) {
+        // TODO:
+        return false;
+    }
+    
     bool protocol_handler(async_tcp_stream_ptr s) {
         using namespace std;
         using namespace boost;
@@ -251,14 +259,13 @@ namespace http {
         bool keep_alive=false;
         
         do {
-            interprocess::basic_ovectorstream<string> ss;
-            session_ptr session(new session_t(ss, s));
+            session_ptr session(new session_t(s));
             
             if (session->closed()) {
                 return false;
             }
             
-            if(session->bad_request()) {
+            if(!session->parse_request()) {
                 *s << "HTTP/1.1 400 Bad request\r\n";
                 return false;
             }
@@ -276,7 +283,7 @@ namespace http {
                 // Handler handles whole HTTP response by itself, include status, headers, and body
             } else {
                 string out_buf;
-                ss.swap_vector(out_buf);
+                session->body_stream().swap_vector(out_buf);
                 
                 map<status_code, string>::const_iterator i=details::status_code_msg_map.find(session->response_.code_);
                 if (i==details::status_code_msg_map.end()) {
@@ -297,6 +304,8 @@ namespace http {
                 *s << out_buf;
             }
             s->flush();
+            
+            // 
         } while (keep_alive);
         
         s->flush();
@@ -304,7 +313,7 @@ namespace http {
     }
 
     bool handle_request(session_ptr session) {
-        if(1) {
+        if(0) {
             session->spawn([session](boost::asio::yield_context yield){
                 using namespace std;
                 ostream &ss=session->body_stream();

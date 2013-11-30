@@ -16,6 +16,7 @@
 #include <vector>
 #include <iostream>
 #include <memory>
+#include <boost/interprocess/streams/vectorstream.hpp>
 #include "async_stream.h"
 
 namespace http {
@@ -128,11 +129,6 @@ namespace http {
     
     struct response_t {
         /**
-         * Set to true means the response has been processed by the handler, no further actions needed
-         */
-        bool raw_=false;
-        
-        /**
          * HTTP status code
          */
         status_code code_=OK;
@@ -143,44 +139,69 @@ namespace http {
         headers_t headers_;
         
         /**
-         * Should the body be compressed
+         * The response body
+         */
+        std::string body_;
+
+        /**
+         * Should the response be compressed
          */
         bool compress_;
     };
     
+    /**
+     * Parse HTTP request
+     *
+     * @param is the socket stream
+     * @param req the HTTP request struct to be filled
+     */
+    bool parse(std::istream &is, response_t &resp);
+    
     struct session_t {
-        session_t(std::ostream &body_stream, async_tcp_stream_ptr raw_stream)
-        : body_stream_(body_stream)
-        , raw_stream_(raw_stream)
-        , bad_request_(parse(*raw_stream, request_))
+        typedef boost::interprocess::basic_ovectorstream<std::string> body_stream_t;
+        
+        session_t(async_tcp_stream_ptr raw_stream)
+        : raw_stream_(raw_stream)
         {}
 
-        inline bool bad_request() const
-        { return bad_request_; }
+        inline bool parse_request()
+        { return parse(raw_stream(), request_); }
         
+        inline bool parse_response()
+        { return parse(raw_stream(), response_); }
+            
         inline bool closed() const
         { return request_.closed_; }
         
         inline bool raw() const
-        { return response_.raw_; }
+        { return raw_; }
         
         inline void raw(bool r)
-        { response_.raw_=r; }
+        { raw_=r; }
         
         inline bool keep_alive() const
         { return request_.keep_alive_; }
         
-        inline std::ostream &body_stream()
+        inline body_stream_t &body_stream()
         { return body_stream_; }
         
         inline async_tcp_stream &raw_stream()
         { return *raw_stream_; }
         
+        inline boost::asio::strand &strand()
+        { return raw_stream().strand(); }
+        
+        inline boost::asio::io_service &io_service()
+        { return raw_stream().strand().get_io_service(); }
+        
+        inline boost::asio::yield_context yield_context()
+        { return raw_stream().yield_context(); }
+        
         template <typename Function>
         void spawn(BOOST_ASIO_MOVE_ARG(Function) function) {
-            boost::asio::spawn(raw_stream().strand(), BOOST_ASIO_MOVE_CAST(Function)(function));
+            boost::asio::spawn(strand(), BOOST_ASIO_MOVE_CAST(Function)(function));
         }
-
+        
         // private:
         /**
          * HTTP request
@@ -193,19 +214,24 @@ namespace http {
         response_t response_;
         
         /**
+         * Set to true means the response has been processed by the handler, no further actions needed
+         */
+        bool raw_=false;
+        
+        /**
+         * Set to true means the process has been deferred
+         */
+        bool deferred_=false;
+
+        /**
          * Output stream for response body, only used when raw_ is false
          */
-        std::ostream &body_stream_;
+        body_stream_t body_stream_;
         
         /**
          * Output stream for raw response, handler needs to output status line, headers, body, etc by itself.
          */
         async_tcp_stream_ptr raw_stream_;
-
-        /**
-         * Indicate if the request is malformed
-         */
-        bool bad_request_=false;
     };
     
     typedef std::shared_ptr<session_t> session_ptr;
