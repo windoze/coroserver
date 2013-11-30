@@ -94,7 +94,7 @@ protected:
     }
 
     virtual int sync()
-    { return nudge_() ? 0 : -1; }
+    { return nudge_()==0 ? 0 : -1; }
     
     virtual std::streamsize showmanyc() {
         if ( gptr() == egptr() ) {
