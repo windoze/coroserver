@@ -16,8 +16,10 @@ int main(int argc, const char *argv[]) {
         server s(&http::protocol_handler,
                  {
                      {"0::0", "20000"},
+                     {"0::0", "20001"},
 #ifndef __APPLE__
                      {"0.0.0.0", "20000"},
+                     {"0.0.0.0", "20001"},
 #endif
                  },
                  num_threads);
