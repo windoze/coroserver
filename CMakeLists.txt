@@ -14,6 +14,6 @@ INCLUDE_DIRECTORIES(
 
 file(GLOB SOURCE_LIST "*.cpp" "http-parser/http_parser.c")
 add_executable(coroserver ${SOURCE_LIST})
-TARGET_LINK_LIBRARIES(coroserver ${Boost_LIBRARIES})
+TARGET_LINK_LIBRARIES(coroserver ${Boost_LIBRARIES} pthread)
 
 
