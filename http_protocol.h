@@ -330,6 +330,12 @@ namespace http {
         { return raw_stream().yield_context(); }
         
         /**
+         * Convenience
+         */
+        operator boost::asio::yield_context()
+        { return yield_context(); }
+        
+        /**
          * Spawn new coroutine within the strand
          */
         template <typename Function>

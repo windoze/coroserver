@@ -321,7 +321,7 @@ namespace http {
     }
 
     bool handle_request(session_ptr session) {
-        boost::asio::condition_flag flag(session->yield_context());
+        boost::asio::condition_flag flag(*session);
         session->strand().post([session, &flag](){
             using namespace std;
             ostream &ss=session->response_.body_stream_;
