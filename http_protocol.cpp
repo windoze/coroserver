@@ -321,7 +321,7 @@ namespace http {
     }
 
     bool handle_request(session_ptr session) {
-        boost::asio::condition_flag flag(session->strand());
+        boost::asio::condition_flag flag(session->yield_context());
         session->strand().post([session, &flag](){
             using namespace std;
             ostream &ss=session->response_.body_stream_;
@@ -341,7 +341,7 @@ namespace http {
             ss << "</TABLE></BODY></HTML>\r\n";
             flag=true;
         });
-        flag.wait(session->yield_context());
+        flag.wait();
         return true;
     }
 }   // End of namespace http
