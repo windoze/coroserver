@@ -11,11 +11,16 @@
 #include "server.h"
 
 int main(int argc, const char *argv[]) {
-    const char *addr="0::0";
-    const char *port="20000";
     std::size_t num_threads = 3;
     try {
-        server s(&http::protocol_handler, addr, port, num_threads);
+        server s(&http::protocol_handler,
+                 {
+                     {"0::0", "20000"},
+#ifndef __APPLE__
+                     {"0.0.0.0", "20000"},
+#endif
+                 },
+                 num_threads);
         s();
     } catch (std::exception& e) {
         std::cerr << "exception: " << e.what() << "\n";

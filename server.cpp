@@ -14,14 +14,13 @@
 #include "server.h"
 
 server::server(std::function<bool(async_tcp_stream_ptr)> protocol_processor,
-               const std::string &address,
-               const std::string &port,
+               const endpoint_list_t &endpoints,
                std::size_t thread_pool_size)
 : protocol_processor_(protocol_processor)
 , thread_pool_size_(thread_pool_size)
 , io_service_()
 , signals_(io_service_)
-, acceptor_(io_service_)
+//, acceptor_(io_service_)
 {
     // Register to handle the signals that indicate when the server should exit.
     // It is safe to register for the same signal multiple times in a program,
@@ -34,15 +33,26 @@ server::server(std::function<bool(async_tcp_stream_ptr)> protocol_processor,
     signals_.async_wait(std::bind(&server::close, this));
     
     // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-    boost::asio::ip::tcp::resolver resolver(io_service_);
-    boost::asio::ip::tcp::resolver::query query(address, port);
-    boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
-    acceptor_.open(endpoint.protocol());
-    acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-    acceptor_.bind(endpoint);
-    acceptor_.listen();
+    listen(endpoints);
     
     open();
+}
+
+void server::listen(const endpoint_list_t &epl) {
+    for (const endpoint_t &ep : epl)
+        listen(ep);
+}
+
+void server::listen(const endpoint_t &ep) {
+    // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
+    boost::asio::ip::tcp::resolver resolver(io_service_);
+    boost::asio::ip::tcp::resolver::query query(ep.first, ep.second);
+    boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
+    acceptor_list_t::iterator i=acceptors_.emplace(acceptors_.end(), boost::asio::ip::tcp::acceptor(io_service_));
+    i->open(endpoint.protocol());
+    i->set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+    i->bind(endpoint);
+    i->listen();
 }
 
 void server::run() {
@@ -60,16 +70,18 @@ void server::run() {
 }
 
 void server::open() {
-    boost::asio::spawn(io_service_,
-                       [&](boost::asio::yield_context yield) {
-                           for (;;) {
-                               boost::system::error_code ec;
-                               boost::asio::ip::tcp::socket socket(io_service_);
-                               acceptor_.async_accept(socket, yield[ec]);
-                               if (!ec)
-                                   handle_connect(std::move(socket));
-                           }
-                       });
+    for (boost::asio::ip::tcp::acceptor &a : acceptors_) {
+        boost::asio::spawn(io_service_,
+                           [&](boost::asio::yield_context yield) {
+                               for (;;) {
+                                   boost::system::error_code ec;
+                                   boost::asio::ip::tcp::socket socket(io_service_);
+                                       a.async_accept(socket, yield[ec]);
+                                   if (!ec)
+                                       handle_connect(std::move(socket));
+                               }
+                           });
+    }
 }
 
 void server::close()
