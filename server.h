@@ -14,7 +14,6 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
-#include <boost/asio/spawn.hpp>
 #include "async_stream.h"
 
 typedef std::pair<std::string, std::string> endpoint_t;
@@ -28,9 +27,8 @@ public:
     /**
      * Constructor
      *
-     * @param simple_protocol_processor the functor that processes the stream, a yield_context will be passed to the function along with socket stream
-     * @param address listening address
-     * @param port listening port
+     * @param protocol_processor the functor that processes the socket stream
+     * @param endpoints listening addresses and ports
      * @param thread_pool_size number of threads that run simultaneously to process client connections
      */
     server(std::function<bool(async_tcp_stream_ptr)> protocol_processor,
@@ -48,9 +46,9 @@ public:
     { run(); }
 
 private:
-    void open();
     void listen(const endpoint_list_t &epl);
     void listen(const endpoint_t &ep);
+    void open();
     void close();
     void run();
     void handle_connect(boost::asio::ip::tcp::socket &&socket);
