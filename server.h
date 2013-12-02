@@ -9,6 +9,7 @@
 #ifndef server_h_included
 #define server_h_included
 
+#include <functional>
 #include <string>
 #include <vector>
 #include <boost/asio/io_service.hpp>
@@ -18,6 +19,7 @@
 
 typedef std::pair<std::string, std::string> endpoint_t;
 typedef std::vector<endpoint_t> endpoint_list_t;
+typedef std::function<void(async_tcp_stream&)> protocol_handler_t;
 
 /**
  * Stream-oriented socket server
@@ -31,7 +33,7 @@ public:
      * @param endpoints listening addresses and ports
      * @param thread_pool_size number of threads that run simultaneously to process client connections
      */
-    server(std::function<bool(async_tcp_stream_ptr)> protocol_processor,
+    server(protocol_handler_t &&protocol_processor,
            const endpoint_list_t &endpoints,
            std::size_t thread_pool_size);
     
@@ -53,7 +55,7 @@ private:
     void run();
     void handle_connect(boost::asio::ip::tcp::socket &&socket);
 
-    std::function<bool(async_tcp_stream_ptr)> protocol_processor_;
+    protocol_handler_t protocol_processor_;
     std::size_t thread_pool_size_;
     boost::asio::io_service io_service_;
     boost::asio::signal_set signals_;

@@ -11,7 +11,6 @@
 #include <boost/interprocess/streams/vectorstream.hpp>
 #include "http-parser/http_parser.h"
 #include "http_protocol.h"
-#include "condition_variable.hpp"
 
 namespace http {
     const char *server_name=HTTP_SERVER_NAME "/" HTTP_SERVER_VERSION;
@@ -322,14 +321,13 @@ namespace http {
         return s;
     }
     
-    bool request_callback(session_t &session) {
-        bool handle_request(session_t&);
+    bool request_callback(session_t &session, request_handler_t &handler) {
         bool ret=true;
         session.count_++;
         try {
             session.response_.clear();
             // Returning false from handle_request indicates the handler doesn't want the connection to keep alive
-            ret = handle_request(session) && session.keep_alive();
+            ret = handler(session) && session.keep_alive();
         } catch(...) {
             session.raw_stream() << "HTTP/1.1 500 Internal Server Error\r\n";
         }
@@ -349,39 +347,12 @@ namespace http {
         return ret;
     }
     
-    bool protocol_handler(async_tcp_stream_ptr s) {
-        using namespace std;
-        using namespace boost;
+    void protocol_handler(async_tcp_stream &s, request_handler_t &&handler) {
+        request_handler_t rh(std::move(handler));
         session_t session(s);
-        
-        parse_request(session, parse_callback_t(&request_callback));
-        
-        return false;
-    }
-
-    bool handle_request(session_t &session) {
-        boost::asio::condition_flag flag(session);
-        session.strand().post([&session, &flag](){
-            using namespace std;
-            ostream &ss=session.response_.body_stream_;
-            ss << "<HTML>\r\n<TITLE>Test</TITLE><BODY>\r\n";
-            ss << "<TABLE border=1>\r\n";
-            ss << "<TR><TD>Schema</TD><TD>" << session.request_.schema_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>User Info</TD><TD>" << session.request_.user_info_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Host</TD><TD>" << session.request_.host_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Port</TD><TD>" << session.request_.port_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Path</TD><TD>" << session.request_.path_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Query</TD><TD>" << session.request_.query_ << "</TD></TR>\r\n";
-            ss << "</TABLE>\r\n";
-            ss << "<TABLE border=1>\r\n";
-            for (auto &h : session.request_.headers_) {
-                ss << "<TR><TD>" << h.first << "</TD><TD>" << h.second << "</TD></TR>\r\n";
-            }
-            ss << "</TABLE></BODY></HTML>\r\n";
-            flag=true;
+        parse_request(session, [&rh](session_t &session)->bool{
+            return request_callback(session, rh);
         });
-        flag.wait();
-        return true;
     }
 }   // End of namespace http
 

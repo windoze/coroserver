@@ -6,7 +6,6 @@
 //  Copyright (c) 2013 0d0a.com. All rights reserved.
 //
 
-#include <functional>
 #include <thread>
 #include <boost/asio/spawn.hpp>
 #include "server.h"
@@ -15,10 +14,10 @@ using namespace boost;
 using namespace boost::asio;
 using namespace boost::asio::ip;
 
-server::server(std::function<bool(async_tcp_stream_ptr)> protocol_processor,
+server::server(protocol_handler_t &&protocol_processor,
                const endpoint_list_t &endpoints,
                std::size_t thread_pool_size)
-: protocol_processor_(protocol_processor)
+: protocol_processor_(std::move(protocol_processor))
 , thread_pool_size_(thread_pool_size)
 , io_service_()
 , signals_(io_service_)
@@ -92,13 +91,13 @@ void server::close()
 void server::handle_connect(tcp::socket &&socket) {
     spawn(strand(io_service_),
           [this, &socket](yield_context yield) {
-              async_tcp_stream_ptr s(new async_tcp_stream(std::move(socket), yield));
+              async_tcp_stream s(std::move(socket), yield);
               try {
                   protocol_processor_(s);
               } catch (std::exception const& e) {
-                  *s << "Exception caught:" << e.what() << std::endl;
+                  // TODO: Log error
               } catch(...) {
-                  *s << "Unknown exception caught" << std::endl;
+                  // TODO: Log error
               }
           });
 }

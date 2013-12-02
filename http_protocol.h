@@ -212,7 +212,7 @@ namespace http {
          *
          * @param raw_stream the socket stream
          */
-        session_t(async_tcp_stream_ptr raw_stream)
+        session_t(async_tcp_stream &raw_stream)
         : raw_stream_(raw_stream)
         {}
 
@@ -238,7 +238,7 @@ namespace http {
          * Returns underlying socket stream
          */
         inline async_tcp_stream &raw_stream()
-        { return *raw_stream_; }
+        { return raw_stream_; }
         
         /**
          * The strand object accociated to the socket
@@ -291,18 +291,22 @@ namespace http {
         /**
          * Output stream for raw response, handler needs to output status line, headers, body, etc by itself.
          */
-        async_tcp_stream_ptr raw_stream_;
+        async_tcp_stream &raw_stream_;
         
+        /**
+         * The number of requests have been processed
+         */
         int count_=0;
     };
+    
+    typedef std::function<bool(session_t &)> request_handler_t;
 
     /**
      * Handle HTTP protocol handler
      *
      * @param s the socket stream
-     * @param yield the yield_context, can be used to create new connections
      */
-    bool protocol_handler(async_tcp_stream_ptr s);
+    void protocol_handler(async_tcp_stream &s, request_handler_t &&handler);
     
 }   // End of namespace http
 

@@ -51,6 +51,14 @@ public:
              buffer_out_ + bf_size - 1 );
     }
 
+    // Movable
+    async_streambuf(async_streambuf &&src)
+    : sd_(std::move(src.sd_))
+    , yield_(std::move(src.yield_))
+    , buffer_in_(std::move(src.buffer_in_))
+    , buffer_out_(std::move(src.buffer_out_))
+    {}
+
     // Non-copyable
     async_streambuf(const async_streambuf&) = delete;
     async_streambuf& operator=(const async_streambuf&) = delete;
@@ -167,6 +175,15 @@ public:
     , std::iostream(&sbuf_)
     {}
     
+    // Movable
+    async_stream(async_stream &&src)
+    : sbuf_(std::move(src.sbuf_))
+    {}
+    
+    // Non-copyable
+    async_stream(const async_stream&) = delete;
+    async_stream& operator=(const async_stream&) = delete;
+    
     /**
      * Destructor
      */
@@ -206,7 +223,5 @@ private:
 };
 
 typedef async_stream<boost::asio::ip::tcp::socket> async_tcp_stream;
-
-typedef std::shared_ptr<async_tcp_stream> async_tcp_stream_ptr;
 
 #endif  /* defined(async_stream_h_included) */
