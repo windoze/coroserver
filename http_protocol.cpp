@@ -80,8 +80,10 @@ namespace http {
                 int on_url(const char *at, size_t length) {
                     if(state_==url)
                         url_.append(at, length);
-                    else
+                    else {
+                        url_.reserve(1024);
                         url_.assign(at, length);
+                    }
                     state_=url;
                     return 0;
                 }
@@ -91,6 +93,7 @@ namespace http {
                         req_->headers_.rbegin()->first.append(at, length);
                     } else {
                         req_->headers_.push_back(header_t());
+                        req_->headers_.rbegin()->first.reserve(256);
                         req_->headers_.rbegin()->first.assign(at, length);
                     }
                     state_=field;
@@ -99,8 +102,10 @@ namespace http {
                 int on_header_value(const char *at, size_t length) {
                     if (state_==value)
                         req_->headers_.rbegin()->second.append(at, length);
-                    else
+                    else {
+                        req_->headers_.rbegin()->second.reserve(256);
                         req_->headers_.rbegin()->second.assign(at, length);
+                    }
                     state_=value;
                     return 0;
                 }
@@ -108,8 +113,10 @@ namespace http {
                 int on_body(const char *at, size_t length) {
                     if (state_==body)
                         req_->body_.append(at, length);
-                    else
+                    else {
+                        req_->body_.reserve(1024);
                         req_->body_.assign(at, length);
+                    }
                     state_=body;
                     return 0;
                 }
