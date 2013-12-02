@@ -17,10 +17,6 @@ int main(int argc, const char *argv[]) {
                  {
                      {"0::0", "20000"},
                      {"0::0", "20001"},
-#ifndef __APPLE__
-                     {"0.0.0.0", "20000"},
-                     {"0.0.0.0", "20001"},
-#endif
                  },
                  num_threads);
         s();
