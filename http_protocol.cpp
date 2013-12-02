@@ -15,6 +15,7 @@
 
 namespace http {
     const char *server_name=HTTP_SERVER_NAME "/" HTTP_SERVER_VERSION;
+    typedef std::function<bool(session_t &)> parse_callback_t;
     
     namespace details {
         const std::map<status_code, std::string> status_code_msg_map={
@@ -64,6 +65,7 @@ namespace http {
             struct parser {
                 enum parser_state{
                     none,
+                    start,
                     url,
                     field,
                     value,
@@ -71,10 +73,12 @@ namespace http {
                     end
                 };
                 
+                request_t &req() { return session_.request_; }
+                
                 int on_message_begin() {
+                    req().clear();
                     url_.clear();
-                    state_=none;
-                    completed_=false;
+                    state_=start;
                     return 0;
                 }
                 int on_url(const char *at, size_t length) {
@@ -87,89 +91,94 @@ namespace http {
                     state_=url;
                     return 0;
                 }
-                int on_status_complete() { return 0; }
+                int on_status_complete() {
+                    return 0;
+                }
                 int on_header_field(const char *at, size_t length) {
                     if (state_==field) {
-                        req_->headers_.rbegin()->first.append(at, length);
+                        req().headers_.rbegin()->first.append(at, length);
                     } else {
-                        req_->headers_.push_back(header_t());
-                        req_->headers_.rbegin()->first.reserve(256);
-                        req_->headers_.rbegin()->first.assign(at, length);
+                        req().headers_.push_back(header_t());
+                        req().headers_.rbegin()->first.reserve(256);
+                        req().headers_.rbegin()->first.assign(at, length);
                     }
                     state_=field;
                     return 0;
                 }
                 int on_header_value(const char *at, size_t length) {
                     if (state_==value)
-                        req_->headers_.rbegin()->second.append(at, length);
+                        req().headers_.rbegin()->second.append(at, length);
                     else {
-                        req_->headers_.rbegin()->second.reserve(256);
-                        req_->headers_.rbegin()->second.assign(at, length);
+                        req().headers_.rbegin()->second.reserve(256);
+                        req().headers_.rbegin()->second.assign(at, length);
                     }
                     state_=value;
                     return 0;
                 }
-                int on_headers_complete() { return 0; }
+                int on_headers_complete() {
+                    return 0;
+                }
                 int on_body(const char *at, size_t length) {
                     if (state_==body)
-                        req_->body_.append(at, length);
+                        req().body_.append(at, length);
                     else {
-                        req_->body_.reserve(1024);
-                        req_->body_.assign(at, length);
+                        req().body_.reserve(1024);
+                        req().body_.assign(at, length);
                     }
                     state_=body;
                     return 0;
                 }
                 int on_message_complete() {
-                    completed_=true;
                     state_=end;
-                    req_->method_=(method)(parser_.method);
-                    req_->http_major_=parser_.http_major;
-                    req_->http_minor_=parser_.http_minor;
+                    req().method_=(method)(parser_.method);
+                    req().http_major_=parser_.http_major;
+                    req().http_minor_=parser_.http_minor;
                     http_parser_url u;
                     http_parser_parse_url(url_.c_str(),
                                           url_.size(),
-                                          req_->method_==CONNECT,
+                                          req().method_==CONNECT,
                                           &u);
                     // Components for proxy requests
                     // NOTE: Schema, user info, host, and port may only exist in proxy requests
                     if(u.field_set & 1 << UF_SCHEMA) {
-                        req_->schema_.assign(url_.begin()+u.field_data[UF_SCHEMA].off,
+                        req().schema_.assign(url_.begin()+u.field_data[UF_SCHEMA].off,
                                              url_.begin()+u.field_data[UF_SCHEMA].off+u.field_data[UF_SCHEMA].len);
                     }
                     if(u.field_set & 1 << UF_USERINFO) {
-                        req_->user_info_.assign(url_.begin()+u.field_data[UF_USERINFO].off,
+                        req().user_info_.assign(url_.begin()+u.field_data[UF_USERINFO].off,
                                                 url_.begin()+u.field_data[UF_USERINFO].off+u.field_data[UF_USERINFO].len);
                     }
                     if(u.field_set & 1 << UF_HOST) {
-                        req_->host_.assign(url_.begin()+u.field_data[UF_HOST].off,
+                        req().host_.assign(url_.begin()+u.field_data[UF_HOST].off,
                                            url_.begin()+u.field_data[UF_HOST].off+u.field_data[UF_HOST].len);
                     }
                     if(u.field_set & 1 << UF_PORT) {
-                        req_->port_=u.port;
+                        req().port_=u.port;
                     } else {
-                        req_->port_=0;
+                        req().port_=0;
                     }
                     // Common components
                     if(u.field_set & 1 << UF_PATH) {
-                        req_->path_.assign(url_.begin()+u.field_data[UF_PATH].off,
+                        req().path_.assign(url_.begin()+u.field_data[UF_PATH].off,
                                            url_.begin()+u.field_data[UF_PATH].off+u.field_data[UF_PATH].len);
                     }
                     if(u.field_set & 1 << UF_QUERY) {
-                        req_->query_.assign(url_.begin()+u.field_data[UF_QUERY].off,
+                        req().query_.assign(url_.begin()+u.field_data[UF_QUERY].off,
                                             url_.begin()+u.field_data[UF_QUERY].off+u.field_data[UF_QUERY].len);
                     }
-                    return 0;
+                    req().keep_alive_=http_should_keep_alive(&parser_);
+                    return (should_continue_=cb_(session_)) ? 0 : -1;
                 }
                 
                 http_parser parser_;
                 std::string url_;
-                bool completed_;
-                request_t *req_;
+                session_t &session_;
+                parse_callback_t cb_;
                 parser_state state_;
+                bool should_continue_;
                 
-                parser();
-                bool parse(std::istream &is, request_t &req);
+                parser(session_t &session, parse_callback_t &&cb);
+                bool parse();
             };
             
             static int on_message_begin(http_parser*p) {
@@ -208,40 +217,38 @@ namespace http {
                 &on_message_complete,
             };
             
-            parser::parser() {
+            parser::parser(session_t &session, parse_callback_t &&cb)
+            : session_(session)
+            , cb_(std::move(cb))
+            {
                 parser_.data=reinterpret_cast<void*>(this);
                 http_parser_init(&parser_, HTTP_REQUEST);
             }
             
-            bool parser::parse(std::istream &is, request_t &req) {
+            bool parser::parse() {
+                should_continue_=true;
                 state_=none;
-                req.closed_=false;
                 constexpr int buf_size=1024;
                 char buf[buf_size];
                 int recved=0;
                 int nparsed=0;
-                req_=&req;
-                while (is) {
+                while (session_.raw_stream()) {
                     // Read some data
-                    recved = is.readsome(buf, buf_size);
+                    recved = session_.raw_stream().readsome(buf, buf_size);
                     if (recved<=0) {
                         // Connection closed
-                        req.closed_=true;
                         return true;
                     }
                     nparsed=http_parser_execute(&parser_, &settings_, buf, recved);
+                    if (!should_continue_) {
+                        break;
+                    }
                     if (nparsed!=recved) {
                         // Parse error
                         return false;
                     }
-                    if (completed_) {
-                        break;
-                    }
                 }
-                // Finishing
-                req_->keep_alive_=http_should_keep_alive(&parser_);
-                req_->valid_=completed_;
-                return completed_;
+                return true;
             }
         }   // End of namespace request
         namespace response {
@@ -249,14 +256,36 @@ namespace http {
         }   // End of namespace response
     }   // End of namespace details
     
-    bool parse(std::istream &is, request_t &req) {
-        details::request::parser p;
-        return p.parse(is, req);
+    void request_t::clear() {
+        http_major_=0;
+        http_minor_=0;
+        method_=GET;
+        schema_.clear();
+        user_info_.clear();
+        host_.clear();
+        port_=0;
+        path_.clear();
+        query_.clear();
+        headers_.clear();
+        keep_alive_=false;
+        body_.clear();
+    }
+    
+    void response_t::clear() {
+        code_=OK;
+        status_message_.clear();
+        headers_.clear();
+        body_.clear();
+    }
+    
+    bool parse_request(session_t &session, parse_callback_t &&req_cb) {
+        details::request::parser p(session, std::move(req_cb));
+        return p.parse();
     }
 
     std::ostream &operator<<(std::ostream &s, response_t &resp) {
         std::map<status_code, std::string>::const_iterator i=details::status_code_msg_map.find(resp.code_);
-        if (i==details::status_code_msg_map.end()) {
+        if (i==details::status_code_msg_map.end() && resp.status_message_.empty()) {
             // Unknown HTTP status code
             s << "HTTP/1.1 500 Internal Server Error\r\n";
         } else {
@@ -264,9 +293,17 @@ namespace http {
             resp.body_stream_.swap_vector(resp.body_);
             char buf[100];
             sprintf(buf, "%lu", resp.body_.size());
-            resp.headers_.push_back(header_t("Content-Length", buf));
-            s << "HTTP/1.1 " << resp.code_ << ' ' << i->second << "\r\n";
+            
+            s << "HTTP/1.1 " << resp.code_ << ' ';
+            if (!resp.status_message_.empty()) {
+                // Supplied status message
+                s << resp.status_message_;
+            } else {
+                s << i->second << "\r\n";
+            }
+
             s << "Server: " << server_name << "\r\n";
+            s << "Content-Length: " << buf << "\r\n";
             for (auto &i : resp.headers_) {
                 s << i.first << ": " << i.second << "\r\n";
             }
@@ -275,7 +312,7 @@ namespace http {
         return s;
     }
     
-    bool parse(std::istream &is, response_t &resp) {
+    bool parse_response(session_t &session, parse_callback_t &&req_cb) {
         // TODO:
         return false;
     }
@@ -285,64 +322,59 @@ namespace http {
         return s;
     }
     
+    bool request_callback(session_t &session) {
+        bool handle_request(session_t&);
+        bool ret=true;
+        session.count_++;
+        try {
+            session.response_.clear();
+            // Returning false from handle_request indicates the handler doesn't want the connection to keep alive
+            ret = handle_request(session) && session.keep_alive();
+        } catch(...) {
+            session.raw_stream() << "HTTP/1.1 500 Internal Server Error\r\n";
+        }
+        
+        if (session.raw()) {
+            // Do nothing here
+            // Handler handles whole HTTP response by itself, include status, headers, and body
+        } else {
+            if (ret) {
+                session.response_.headers_.push_back(header_t("Connection", "keep-alive"));
+            } else {
+                session.response_.headers_.push_back(header_t("Connection", "close"));
+            }
+            session.raw_stream() << session.response_;
+        }
+        session.raw_stream().flush();
+        return ret;
+    }
+    
     bool protocol_handler(async_tcp_stream_ptr s) {
         using namespace std;
         using namespace boost;
-        bool handle_request(session_ptr);
+        session_t session(s);
         
-        bool keep_alive=false;
+        parse_request(session, parse_callback_t(&request_callback));
         
-        do {
-            session_ptr session(new session_t(s));
-            
-            *s >> session->request_;
-            
-            if (session->closed()) {
-                return false;
-            }
-            
-            if(!session->request_.valid_) {
-                *s << "HTTP/1.1 400 Bad request\r\n";
-                return false;
-            }
-            
-            try {
-                // Returning false from handle_request indicates the handler doesn't want the connection to keep alive
-                keep_alive = handle_request(session) && session->keep_alive();
-            } catch(...) {
-                *s << "HTTP/1.1 500 Internal Server Error\r\n";
-                break;
-            }
-            
-            if (session->raw()) {
-                // Do nothing here
-                // Handler handles whole HTTP response by itself, include status, headers, and body
-            } else {
-                *s << session->response_;
-            }
-            s->flush();
-        } while (keep_alive);
-        
-        s->flush();
         return false;
     }
 
-    bool handle_request(session_ptr session) {
-        boost::asio::condition_flag flag(*session);
-        session->strand().post([session, &flag](){
+    bool handle_request(session_t &session) {
+        boost::asio::condition_flag flag(session);
+        session.strand().post([&session, &flag](){
             using namespace std;
-            ostream &ss=session->response_.body_stream_;
+            ostream &ss=session.response_.body_stream_;
             ss << "<HTML>\r\n<TITLE>Test</TITLE><BODY>\r\n";
             ss << "<TABLE border=1>\r\n";
-            ss << "<TR><TD>Schema</TD><TD>" << session->request_.schema_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>User Info</TD><TD>" << session->request_.user_info_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Host</TD><TD>" << session->request_.host_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Port</TD><TD>" << session->request_.port_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Path</TD><TD>" << session->request_.path_ << "</TD></TR>\r\n";
-            ss << "<TR><TD>Query</TD><TD>" << session->request_.query_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>Schema</TD><TD>" << session.request_.schema_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>User Info</TD><TD>" << session.request_.user_info_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>Host</TD><TD>" << session.request_.host_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>Port</TD><TD>" << session.request_.port_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>Path</TD><TD>" << session.request_.path_ << "</TD></TR>\r\n";
+            ss << "<TR><TD>Query</TD><TD>" << session.request_.query_ << "</TD></TR>\r\n";
             ss << "</TABLE>\r\n";
             ss << "<TABLE border=1>\r\n";
-            for (auto &h : session->request_.headers_) {
+            for (auto &h : session.request_.headers_) {
                 ss << "<TR><TD>" << h.first << "</TD><TD>" << h.second << "</TD></TR>\r\n";
             }
             ss << "</TABLE></BODY></HTML>\r\n";

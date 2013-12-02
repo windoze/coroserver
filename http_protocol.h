@@ -12,6 +12,7 @@
 #define HTTP_SERVER_NAME "coroserver"
 #define HTTP_SERVER_VERSION "0.1"
 
+#include <list>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -105,10 +106,7 @@ namespace http {
     typedef std::vector<header_t> headers_t;
     
     struct request_t {
-        /**
-         * Valid flag
-         */
-        bool valid_;
+        void clear();
         
         /**
          * HTTP Major version
@@ -166,11 +164,6 @@ namespace http {
         bool keep_alive_;
 
         /**
-         * True if the connection closed before reading/parsing
-         */
-        bool closed_;
-
-        /**
          * Request body
          */
         std::string body_;
@@ -181,39 +174,9 @@ namespace http {
         body_stream_t body_stream_;
     };
     
-    /**
-     * Parse HTTP request
-     *
-     * @param is the input stream
-     * @param req the HTTP request struct to be filled
-     */
-    bool parse(std::istream &is, request_t &req);
-    
-    /**
-     * Read HTTP request from input stream
-     *
-     * @param is the input stream
-     * @param req the HTTP request struct to be filled
-     */
-    inline std::istream &operator >>(std::istream &is, request_t &req) {
-        parse(is, req);
-        return is;
-    }
-    
-    /**
-     * Write HTTP request to output stream
-     *
-     * @param os the output stream
-     * @param req the HTTP request struct to be written
-     */
-    std::ostream &operator<<(std::ostream &os, const request_t &req);
-
     struct response_t {
-        /**
-         * Valid flag
-         */
-        bool valid_;
-
+        void clear();
+        
         /**
          * HTTP status code
          */
@@ -240,34 +203,6 @@ namespace http {
         body_stream_t body_stream_;
     };
     
-    // TODO:
-    /**
-     * Parse HTTP response
-     *
-     * @param is the input stream
-     * @param req the HTTP response struct to be filled
-     */
-    bool parse(std::istream &is, response_t &resp);
-    
-    /**
-     * Read HTTP response from input stream
-     *
-     * @param is the input stream
-     * @param resp the HTTP response struct to be filled
-     */
-    inline std::istream &operator >>(std::istream &is, response_t &resp) {
-        parse(is, resp);
-        return is;
-    }
-    
-    /**
-     * Write HTTP response to output stream
-     *
-     * @param os the output stream
-     * @param resp the HTTP response struct to be written
-     */
-    std::ostream &operator<<(std::ostream &os, const response_t &resp);
-    
     /**
      * Represent a HTTP session, which is a request/response roundtrip
      */
@@ -281,12 +216,6 @@ namespace http {
         : raw_stream_(raw_stream)
         {}
 
-        /**
-         * Return true means the underlying connection is closed
-         */
-        inline bool closed() const
-        { return request_.closed_; }
-        
         /**
          * Return true means the response should be handled by the request handler
          */
@@ -363,10 +292,10 @@ namespace http {
          * Output stream for raw response, handler needs to output status line, headers, body, etc by itself.
          */
         async_tcp_stream_ptr raw_stream_;
+        
+        int count_=0;
     };
-    
-    typedef std::shared_ptr<session_t> session_ptr;
-    
+
     /**
      * Handle HTTP protocol handler
      *
