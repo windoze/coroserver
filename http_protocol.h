@@ -18,6 +18,7 @@
 #include <iostream>
 #include <memory>
 #include <boost/interprocess/streams/vectorstream.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include "async_stream.h"
 
 namespace http {
@@ -104,6 +105,21 @@ namespace http {
     typedef boost::interprocess::basic_ovectorstream<std::string> body_stream_t;
     typedef std::pair<std::string, std::string> header_t;
     typedef std::vector<header_t> headers_t;
+
+    inline headers_t::const_iterator find_header(const headers_t &headers, const std::string &key, bool case_sensitive=false) {
+        for (headers_t::const_iterator i=headers.begin(); i!=headers.end(); ++i) {
+            if (case_sensitive) {
+                if (boost::algorithm::equals(i->first, key)) {
+                    return i;
+                }
+            } else {
+                if (boost::algorithm::iequals(i->first, key)) {
+                    return i;
+                }
+            }
+        }
+        return headers.end();
+    }
     
     struct request_t {
         void clear();

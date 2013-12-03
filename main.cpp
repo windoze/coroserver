@@ -19,6 +19,10 @@
 // Test redirection
 bool handle_alt_index(http::session_t &session) {
     session.response_.code_=http::SEE_OTHER;
+    http::headers_t::const_iterator i=http::find_header(session.request_.headers_, "host");
+    if (i!=session.request_.headers_.end()) {
+        session.response_.headers_.push_back(*i);
+    }
     session.response_.headers_.push_back({"Location", "/index.html"});
     return true;
 }
