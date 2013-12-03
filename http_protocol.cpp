@@ -268,6 +268,8 @@ namespace http {
         headers_.clear();
         keep_alive_=false;
         body_.clear();
+        std::string empty;
+        body_stream_.swap_vector(empty);
     }
     
     void response_t::clear() {
@@ -275,6 +277,8 @@ namespace http {
         status_message_.clear();
         headers_.clear();
         body_.clear();
+        std::string empty;
+        body_stream_.swap_vector(empty);
     }
     
     bool parse_request(session_t &session, parse_callback_t &&req_cb) {
