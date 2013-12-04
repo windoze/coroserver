@@ -91,7 +91,8 @@ void server::close()
 void server::handle_connect(tcp::socket &&socket) {
     spawn(strand(io_service_),
           [this, &socket](yield_context yield) {
-              async_tcp_stream s(std::move(socket), yield);
+              std::shared_ptr<async_tcp_streambuf> sbp(std::make_shared<async_tcp_streambuf>(std::move(socket), yield));
+              async_tcp_stream s(sbp);
               try {
                   // Create a new protocol handler for each connection
                   protocol_handler_t handler(protocol_processor_);
