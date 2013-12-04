@@ -322,8 +322,97 @@ namespace http {
      *
      * @param s the socket stream
      */
-    void protocol_handler(async_tcp_stream &s, request_handler_t &&handler);
+    //void protocol_handler(async_tcp_stream &s, request_handler_t &&handler);
     
+    bool parse_request(session_t &session, std::function<bool(session_t &)> &req_cb);
+    bool request_callback(session_t &session, std::function<bool(session_t &)> &handler);
+    
+    template<typename Arg>
+    struct protocol_handler {
+        typedef std::function<bool(session_t &, Arg &)> handler_t;
+        
+        protocol_handler(handler_t &&handler)
+        : handler_(std::move(handler))
+        , arg_()
+        {}
+        
+        protocol_handler(const handler_t &handler)
+        : handler_(handler)
+        , arg_()
+        {}
+        
+        protocol_handler(handler_t &&handler, Arg &&arg)
+        : handler_(std::move(handler))
+        , arg_(std::move(arg))
+        {}
+        
+        protocol_handler(const handler_t &handler, const Arg &arg)
+        : handler_(handler)
+        , arg_(arg)
+        {}
+        
+        protocol_handler(handler_t &&handler, const Arg &arg)
+        : handler_(std::move(handler))
+        , arg_(arg)
+        {}
+        
+        protocol_handler(const handler_t &handler, Arg &&arg)
+        : handler_(handler)
+        , arg_(std::move(arg))
+        {}
+        
+        protocol_handler(const protocol_handler &other)
+        : handler_(other.handler_)
+        , arg_(other.arg_)
+        {}
+        
+        protocol_handler(protocol_handler &&other)
+        : handler_(std::move(other.handler_))
+        , arg_(std::move(other.arg_))
+        {}
+        
+        void operator()(async_tcp_stream &s) {
+            session_t session(s);
+            request_handler_t h([this](session_t &session)->bool{
+                return handler_(session, arg_);
+            });
+            std::function<bool(session_t &)> cb([this, &h](session_t &session)->bool{
+                return request_callback(session, h);
+            });
+            parse_request(session, cb);
+        }
+        
+        handler_t handler_;
+        Arg arg_;
+    };
+
+    // In case we don't need any argument
+    template<>
+    struct protocol_handler<void> {
+        typedef std::function<bool(session_t &)> handler_t;
+        
+        protocol_handler(handler_t &&handler)
+        : handler_(handler)
+        {}
+        
+        protocol_handler(const protocol_handler &other)
+        : handler_(other.handler_)
+        {}
+        
+        protocol_handler(protocol_handler &&other)
+        : handler_(std::move(other.handler_))
+        {}
+        
+        void operator()(async_tcp_stream &s) {
+            session_t session(s);
+            std::function<bool(session_t &)> cb([this](session_t &session)->bool{
+                return request_callback(session, handler_);
+            });
+            parse_request(session, cb);
+        }
+        
+        handler_t handler_;
+    };
 }   // End of namespace http
 
 #endif /* defined(__coroserver__http_protocol__) */

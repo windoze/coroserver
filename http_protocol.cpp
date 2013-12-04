@@ -172,11 +172,11 @@ namespace http {
                 http_parser parser_;
                 std::string url_;
                 session_t &session_;
-                parse_callback_t cb_;
+                parse_callback_t &cb_;
                 parser_state state_;
                 bool should_continue_;
                 
-                parser(session_t &session, parse_callback_t &&cb);
+                parser(session_t &session, parse_callback_t &cb);
                 bool parse();
             };
             
@@ -216,9 +216,9 @@ namespace http {
                 &on_message_complete,
             };
             
-            parser::parser(session_t &session, parse_callback_t &&cb)
+            parser::parser(session_t &session, parse_callback_t &cb)
             : session_(session)
-            , cb_(std::move(cb))
+            , cb_(cb)
             {
                 parser_.data=reinterpret_cast<void*>(this);
                 http_parser_init(&parser_, HTTP_REQUEST);
@@ -281,8 +281,8 @@ namespace http {
         body_stream_.swap_vector(empty);
     }
     
-    bool parse_request(session_t &session, parse_callback_t &&req_cb) {
-        details::request::parser p(session, std::move(req_cb));
+    bool parse_request(session_t &session, parse_callback_t &req_cb) {
+        details::request::parser p(session, req_cb);
         return p.parse();
     }
 
@@ -327,7 +327,6 @@ namespace http {
     
     bool request_callback(session_t &session, request_handler_t &handler) {
         bool ret=true;
-        session.count_++;
         try {
             session.response_.clear();
             // Returning false from handle_request indicates the handler doesn't want the connection to keep alive
@@ -348,15 +347,8 @@ namespace http {
             session.raw_stream() << session.response_;
         }
         session.raw_stream().flush();
+        session.count_++;
         return ret;
-    }
-    
-    void protocol_handler(async_tcp_stream &s, request_handler_t &&handler) {
-        request_handler_t rh(std::move(handler));
-        session_t session(s);
-        parse_request(session, [&rh](session_t &session)->bool{
-            return request_callback(session, rh);
-        });
     }
 }   // End of namespace http
 

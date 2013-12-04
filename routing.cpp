@@ -19,7 +19,7 @@ namespace http {
         };
     }
     
-    routing_pred_t equals(const std::string &s, bool case_sensitive) {
+    routing_pred_t url_equals(const std::string &s, bool case_sensitive) {
         if (case_sensitive) {
             return [s](session_t &session)->bool{
                 return session.request_.path_==s;
@@ -31,7 +31,7 @@ namespace http {
         }
     }
 
-    routing_pred_t prefix(const std::string &s, bool case_sensitive) {
+    routing_pred_t url_starts_with(const std::string &s, bool case_sensitive) {
         if (case_sensitive) {
             return [s](session_t &session)->bool{
                 return boost::algorithm::starts_with(session.request_.path_, s);
@@ -43,19 +43,33 @@ namespace http {
         }
     }
     
-    bool route(routing_table_t &table, session_t &session) {
-        for (routing_entry_t &ent : table) {
-            if(ent.first(session))
-                return ent.second(session);
+    routing_pred_t url_ends_with(const std::string &s, bool case_sensitive) {
+        if (case_sensitive) {
+            return [s](session_t &session)->bool{
+                return boost::algorithm::ends_with(session.request_.path_, s);
+            };
+        } else {
+            return [s](session_t &session)->bool{
+                return boost::algorithm::iends_with(session.request_.path_, s);
+            };
         }
-        return false;
     }
     
-    bool router::operator()(session_t &session) {
-        return route(table_, session);
+    routing_pred_t operator &&(routing_pred_t c1, routing_pred_t c2) {
+        return [c1, c2](session_t &session)->bool {
+            return c1(session) && c2(session);
+        };
     }
-    
-    void router::operator()(async_tcp_stream &s) {
-        protocol_handler(s, *this);
+
+    routing_pred_t operator ||(routing_pred_t c1, routing_pred_t c2) {
+        return [c1, c2](session_t &session)->bool {
+            return c1(session) || c2(session);
+        };
+    }
+
+    routing_pred_t operator !(routing_pred_t c) {
+        return [c](session_t &session)->bool {
+            return !c(session);
+        };
     }
 }   // End of namespace http

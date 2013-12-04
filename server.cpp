@@ -93,7 +93,9 @@ void server::handle_connect(tcp::socket &&socket) {
           [this, &socket](yield_context yield) {
               async_tcp_stream s(std::move(socket), yield);
               try {
-                  protocol_processor_(s);
+                  // Create a new protocol handler for each connection
+                  protocol_handler_t handler(protocol_processor_);
+                  handler(s);
               } catch (std::exception const& e) {
                   // TODO: Log error
               } catch(...) {
