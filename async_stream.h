@@ -250,17 +250,7 @@ public:
     async_stream(streambuf_ptr sb)
     : sbuf_(sb)
     , std::iostream(sb.get())
-    {
-        // NOTE: shared_ptr<async_streambuf> is needed here as the callback may happen *after* the destruction of async_stream
-        // Cancelling in destructor is not reliable as the callback may already be posted in the queue
-        std::weak_ptr<streambuf_t> sbp(sbuf_);
-        sbuf_->set_read_timeout_callback([sbp](boost::system::error_code error){
-            if (!error && !sbp.expired()) sbp.lock()->close();
-        });
-        sbuf_->set_write_timeout_callback([sbp](boost::system::error_code error){
-            if (!error && !sbp.expired()) sbp.lock()->close();
-        });
-    }
+    { setup_callback(); }
     
     // Movable
     async_stream(async_stream &&src)
@@ -322,9 +312,36 @@ public:
     { sbuf_->write_timeout(timeout); }
 
 private:
+    void setup_callback() {
+        // NOTE: shared_ptr<async_streambuf> is needed here as the callback may happen *after* the destruction of async_stream
+        // Cancelling in destructor is not reliable as the callback may already be posted in the queue
+        std::weak_ptr<streambuf_t> sbp(sbuf_);
+        sbuf_->set_read_timeout_callback([sbp](boost::system::error_code error){
+            if (!error && !sbp.expired()) sbp.lock()->close();
+        });
+        sbuf_->set_write_timeout_callback([sbp](boost::system::error_code error){
+            if (!error && !sbp.expired()) sbp.lock()->close();
+        });
+    }
+    
     streambuf_ptr sbuf_;
 };
 
 typedef async_stream<boost::asio::ip::tcp::socket> async_tcp_stream;
+
+inline async_tcp_stream open_async_tcp_stream(const std::string &host,
+                                              const std::string &port,
+                                              boost::asio::yield_context yield)
+{
+    using namespace boost::asio::ip;
+    boost::asio::io_service &ios=yield.handler_.dispatcher_.get_io_service();
+    tcp::resolver resolver(ios);
+    tcp::resolver::query query(host, port);
+    tcp::endpoint endpoint=*resolver.resolve(query);;
+    tcp::socket s(ios);
+    s.connect(endpoint);
+    std::shared_ptr<async_tcp_streambuf> sbp(std::make_shared<async_tcp_streambuf>(std::move(s), yield));
+    return async_tcp_stream(sbp);
+}
 
 #endif  /* defined(async_stream_h_included) */

@@ -122,100 +122,216 @@ namespace http {
     }
     
     struct request_t {
+        /**
+         * Clear request
+         */
         void clear();
         
         /**
          * HTTP Major version
          */
-        short http_major_;
+        short http_major() const
+        { return http_major_; }
+        
+        void http_major(short v)
+        { http_major_=v; }
         
         /**
          * HTTP Minor version
          */
-        short http_minor_;
+        short http_minor() const
+        { return http_minor_; }
+        
+        void http_minor(short v)
+        { http_minor_=v; }
         
         /**
          * Method
          */
-        method method_;
+        http::method method() const
+        { return method_; }
+        
+        void method(http::method v)
+        { method_=v; }
         
         /**
          * Schema in URL, may only exist in proxy requests
          */
-        std::string schema_;
+        const std::string &schema() const
+        { return schema_; }
+        
+        void schema(const std::string &v)
+        { schema_=v; }
         
         /**
          * User info in URL, may only exist in proxy requests
          */
-        std::string user_info_;
-
+        const std::string &user_info() const
+        { return user_info_; }
+        
+        void user_info(const std::string &v)
+        { user_info_=v; }
+        
         /**
          * Host in URL, may only exist in proxy requests
          */
-        std::string host_;
+        const std::string &host() const
+        { return host_; }
+        
+        void host(const std::string &v)
+        { host_=v; }
         
         /**
          * Port in URL, may only exist in proxy requests
          */
-        int port_;
+        int port() const
+        { return port_; }
+        
+        void port(int v)
+        { port_=v; }
         
         /**
          * Path in URL
          */
-        std::string path_;
+        const std::string &path() const
+        { return path_; }
+        
+        void path(const std::string &v)
+        { path_=v; }
         
         /**
          * Query part in URL
          */
-        std::string query_;
-
+        const std::string &query() const
+        { return query_; }
+        
+        void query(const std::string &v)
+        { query_=v; }
+        
         /**
          * HTTP Headers
          */
-        headers_t headers_;
-
+        const headers_t &headers() const
+        { return headers_; }
+        
+        headers_t &headers()
+        { return headers_; }
+        
         /**
          * Keep-alive flag
          */
-        bool keep_alive_;
+        bool keep_alive() const
+        { return keep_alive_; }
+        
+        void keep_alive(bool v)
+        { keep_alive_=v; }
 
         /**
          * Request body
          */
-        std::string body_;
-
+        const std::string &body() const
+        { return body_stream_.vector(); }
+        
         /**
          * Output stream for response body
          */
+        body_stream_t &body_stream()
+        { return body_stream_; }
+        
+    private:
+        short http_major_;
+        short http_minor_;
+        http::method method_;
+        std::string schema_;
+        std::string user_info_;
+        std::string host_;
+        int port_;
+        std::string path_;
+        std::string query_;
+        headers_t headers_;
+        bool keep_alive_;
         body_stream_t body_stream_;
     };
     
     struct response_t {
+        /**
+         * Clear response
+         */
         void clear();
+
+        /**
+         * HTTP Major version
+         */
+        short http_major() const
+        { return http_major_; }
+        
+        void http_major(short v)
+        { http_major_=v; }
+        
+        /**
+         * HTTP Minor version
+         */
+        short http_minor() const
+        { return http_minor_; }
+        
+        void http_minor(short v)
+        { http_minor_=v; }
         
         /**
          * HTTP status code
          */
-        status_code code_=OK;
+        status_code code() const
+        { return code_; }
+        
+        void code(status_code v)
+        { code_=v; }
+        
+        void code(status_code v, const std::string &s)
+        { code_=v; status_message_=s; }
         
         /**
          * HTTP status message
          */
-        std::string status_message_;
+        const std::string &status_message() const
+        { return status_message_; }
         
         /**
          * HTTP Headers
          */
-        headers_t headers_;
+        const headers_t &headers() const
+        { return headers_; }
+
+        headers_t &headers()
+        { return headers_; }
+        
+        /**
+         * Keep-alive flag
+         */
+        bool keep_alive() const
+        { return keep_alive_; }
+
+        void keep_alive(bool v)
+        { keep_alive_=v; }
         
         /**
          * The response body
          */
-        std::string body_;
-
+        const std::string &body() const
+        { return body_stream_.vector(); }
+        
         /**
          * Output stream for response body
          */
+        body_stream_t &body_stream()
+        { return body_stream_; }
+        
+    private:
+        short http_major_;
+        short http_minor_;
+        status_code code_=OK;
+        std::string status_message_;
+        headers_t headers_;
+        bool keep_alive_;
         body_stream_t body_stream_;
     };
     
@@ -232,30 +348,56 @@ namespace http {
         : raw_stream_(raw_stream)
         {}
 
+        /**
+         * HTTP request
+         */
+        request_t &request()
+        { return request_; }
+        
+        const request_t &request() const
+        { return request_; }
+        
+        /**
+         * HTTP response
+         */
+        response_t &response()
+        { return response_; }
+        
+        const response_t &response() const
+        { return response_; }
+        
+        /**
+         * Read timeout
+         *
+         * Timeout for single read operation, may also apply to idle time between request
+         */
         int read_timeout() const
         { return raw_stream().read_timeout(); }
         
-        int write_timeout() const
-        { return raw_stream().write_timeout(); }
-        
         inline void read_timeout(int sec)
         { raw_stream().read_timeout(sec); }
+        
+        /**
+         * Write timeout
+         */
+        int write_timeout() const
+        { return raw_stream().write_timeout(); }
         
         inline void write_timeout(int sec)
         { raw_stream().write_timeout(sec); }
         
         /**
-         * Return true means the response should be handled by the request handler
+         * Raw mode means the response should be handled by the request handler
          */
         inline bool raw() const
         { return raw_; }
         
-        /**
-         * Set raw mode
-         */
         inline void raw(bool r)
         { raw_=r; }
         
+        /**
+         * Max number of requests allowed in one connection, 0 means unlimited
+         */
         inline int max_keepalive() const
         { return max_keepalive_; }
         
@@ -266,10 +408,22 @@ namespace http {
          * Return true means the remote peer wants the connection keep alive
          */
         inline bool keep_alive() const
-        { return request_.keep_alive_; }
+        { return request_.keep_alive(); }
         
         /**
-         * Returns underlying socket stream
+         * The number of requests have been processed
+         */
+        int count() const
+        { return count_; }
+        
+        /**
+         * Increment the request count
+         */
+        void inc_count()
+        { count_++; }
+        
+        /**
+         * Underlying socket stream
          */
         inline async_tcp_stream &raw_stream()
         { return raw_stream_; }
@@ -290,7 +444,7 @@ namespace http {
         { return raw_stream().strand().get_io_service(); }
         
         /**
-         * The yield context accociated to the coroutine handling this session/connection
+         * The yield context accociated to the coroutine handling this connection
          */
         inline boost::asio::yield_context yield_context()
         { return raw_stream().yield_context(); }
@@ -309,35 +463,12 @@ namespace http {
             boost::asio::spawn(strand(), BOOST_ASIO_MOVE_CAST(Function)(function));
         }
         
-        // private:
-        /**
-         * HTTP request
-         */
+    private:
         request_t request_;
-        
-        /**
-         * HTTP response
-         */
         response_t response_;
-        
-        /**
-         * Set to true means the response has been processed by the handler, no further actions needed
-         */
         bool raw_=false;
-        
-        /**
-         * Output stream for raw response, handler needs to output status line, headers, body, etc by itself.
-         */
         async_tcp_stream &raw_stream_;
-        
-        /**
-         * The number of requests have been processed
-         */
         int count_=0;
-        
-        /**
-         * Max number of requests allowed in one connection
-         */
         int max_keepalive_=0;
     };
     
@@ -349,17 +480,18 @@ namespace http {
 
     template<typename... Args>
     bool default_req_handler(session_t &session, const Args &...) {
-        session.response_.code_=NOT_IMPLEMENTED;
+        session.response().code(NOT_IMPLEMENTED);
         return false;
     }
     
     template<typename... Args>
     bool default_close_handler(session_t &session, const Args &...)
     { return true; }
-    
-    
+
+    // Server side
     bool parse_request(session_t &session, std::function<bool(session_t &)> &req_cb);
     bool request_callback(session_t &session, std::function<bool(session_t &)> &handler);
+    std::ostream &operator<<(std::ostream &s, response_t &resp);
     
     /**
      * Handle HTTP protocol handler with argument
@@ -465,6 +597,12 @@ namespace http {
         handler_t req_handler_;
         handler_t close_handler_;
     };
+    
+    // Client side
+    std::ostream &operator<<(std::ostream &s, request_t &req);
+    bool parse_response(std::istream &is, response_t &resp);
+    inline std::istream &operator>>(std::istream &is, response_t &resp)
+    { parse_response(is, resp); return is; }
 }   // End of namespace http
 
 #endif /* defined(__coroserver__http_protocol__) */

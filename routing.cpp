@@ -22,11 +22,11 @@ namespace http {
     routing_pred_t url_equals(const std::string &s, bool case_sensitive) {
         if (case_sensitive) {
             return [s](session_t &session)->bool{
-                return session.request_.path_==s;
+                return session.request().path()==s;
             };
         } else {
             return [s](session_t &session)->bool{
-                return boost::algorithm::iequals(session.request_.path_, s);
+                return boost::algorithm::iequals(session.request().path(), s);
             };
         }
     }
@@ -34,11 +34,11 @@ namespace http {
     routing_pred_t url_starts_with(const std::string &s, bool case_sensitive) {
         if (case_sensitive) {
             return [s](session_t &session)->bool{
-                return boost::algorithm::starts_with(session.request_.path_, s);
+                return boost::algorithm::starts_with(session.request().path(), s);
             };
         } else {
             return [s](session_t &session)->bool{
-                return boost::algorithm::istarts_with(session.request_.path_, s);
+                return boost::algorithm::istarts_with(session.request().path(), s);
             };
         }
     }
@@ -46,11 +46,11 @@ namespace http {
     routing_pred_t url_ends_with(const std::string &s, bool case_sensitive) {
         if (case_sensitive) {
             return [s](session_t &session)->bool{
-                return boost::algorithm::ends_with(session.request_.path_, s);
+                return boost::algorithm::ends_with(session.request().path(), s);
             };
         } else {
             return [s](session_t &session)->bool{
-                return boost::algorithm::iends_with(session.request_.path_, s);
+                return boost::algorithm::iends_with(session.request().path(), s);
             };
         }
     }
