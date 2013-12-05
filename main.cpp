@@ -94,13 +94,23 @@ bool handle_other(http::session_t &session, arg_t &arg) {
 int main(int argc, const char *argv[]) {
     std::size_t num_threads = 3;
     try {
-        http::protocol_handler<arg_t> handler(http::router<arg_t>({
+        http::protocol_handler<> hh;
+        
+        http::protocol_handler<arg_t> handler;
+        handler.set_default_argument(42);
+        handler.set_open_handler([](http::session_t &session, arg_t &arg)->bool{
+            session.read_timeout(5);
+            session.write_timeout(5);
+            session.max_keepalive(3);
+            return true;
+        });
+        handler.set_request_handler(http::router<arg_t>({
             {http::url_equals("/"), &handle_alt_index},
             {http::url_equals("/index.html"), &handle_index},
             {http::url_starts_with("/index") && http::url_ends_with(".htm"), &handle_alt_index},
             {http::url_equals("/favicon.ico"), &handle_not_found},
             {http::any(), &handle_other},
-        }), arg_t(42));
+        }));
         server s(handler,
                  {
                      {"0::0", "20000"},

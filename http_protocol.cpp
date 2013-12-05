@@ -340,9 +340,27 @@ namespace http {
             // Handler handles whole HTTP response by itself, include status, headers, and body
         } else {
             if (ret) {
-                session.response_.headers_.push_back(header_t("Connection", "keep-alive"));
+                char buf[100];
+                if (session.max_keepalive()!=0) {
+                    if (session.max_keepalive()>session.count_) {
+                        // Keep-alive in progress
+                        session.response_.headers_.push_back({"Connection", "keep-alive"});
+                        sprintf(buf, "timeout=%d, max=%d", session.read_timeout(), session.max_keepalive()-session.count_);
+                        session.response_.headers_.push_back({"Keep-Alive", buf});
+                    } else {
+                        // Max limit reached, stop keeping alive
+                        session.response_.headers_.push_back({"Connection", "close"});
+                        ret=false;
+                    }
+                } else {
+                    // Limitless keep-alive
+                    session.response_.headers_.push_back({"Connection", "keep-alive"});
+                    sprintf(buf, "timeout=%d", session.read_timeout());
+                    session.response_.headers_.push_back({"Keep-Alive", buf});
+                }
             } else {
-                session.response_.headers_.push_back(header_t("Connection", "close"));
+                session.response_.headers_.push_back({"Connection", "close"});
+                ret=false;
             }
             session.raw_stream() << session.response_;
         }

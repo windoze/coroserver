@@ -232,6 +232,18 @@ namespace http {
         : raw_stream_(raw_stream)
         {}
 
+        int read_timeout() const
+        { return raw_stream().read_timeout(); }
+        
+        int write_timeout() const
+        { return raw_stream().write_timeout(); }
+        
+        inline void read_timeout(int sec)
+        { raw_stream().read_timeout(sec); }
+        
+        inline void write_timeout(int sec)
+        { raw_stream().write_timeout(sec); }
+        
         /**
          * Return true means the response should be handled by the request handler
          */
@@ -244,6 +256,12 @@ namespace http {
         inline void raw(bool r)
         { raw_=r; }
         
+        inline int max_keepalive() const
+        { return max_keepalive_; }
+        
+        inline void max_keepalive(int n)
+        { max_keepalive_=n; }
+        
         /**
          * Return true means the remote peer wants the connection keep alive
          */
@@ -254,6 +272,9 @@ namespace http {
          * Returns underlying socket stream
          */
         inline async_tcp_stream &raw_stream()
+        { return raw_stream_; }
+        
+        inline const async_tcp_stream &raw_stream() const
         { return raw_stream_; }
         
         /**
@@ -313,105 +334,136 @@ namespace http {
          * The number of requests have been processed
          */
         int count_=0;
+        
+        /**
+         * Max number of requests allowed in one connection
+         */
+        int max_keepalive_=0;
     };
     
     typedef std::function<bool(session_t &)> request_handler_t;
+    
+    template<typename... Args>
+    bool default_open_handler(session_t &session, const Args &...)
+    { return true; }
 
-    /**
-     * Handle HTTP protocol handler
-     *
-     * @param s the socket stream
-     */
-    //void protocol_handler(async_tcp_stream &s, request_handler_t &&handler);
+    template<typename... Args>
+    bool default_req_handler(session_t &session, const Args &...) {
+        session.response_.code_=NOT_IMPLEMENTED;
+        return false;
+    }
+    
+    template<typename... Args>
+    bool default_close_handler(session_t &session, const Args &...)
+    { return true; }
+    
     
     bool parse_request(session_t &session, std::function<bool(session_t &)> &req_cb);
     bool request_callback(session_t &session, std::function<bool(session_t &)> &handler);
     
+    /**
+     * Handle HTTP protocol handler with argument
+     */
+    // Base template
+    // TODO: There is no easy way to store-and-forward variadic template arguments in C++11
+    template<typename... Arg>
+    struct protocol_handler;
+    
     template<typename Arg>
-    struct protocol_handler {
+    struct protocol_handler<Arg> {
+        typedef protocol_handler<Arg> this_t;
         typedef std::function<bool(session_t &, Arg &)> handler_t;
-        
-        protocol_handler(handler_t &&handler)
-        : handler_(std::move(handler))
-        , arg_()
+
+        protocol_handler()
+        : open_handler_(&(default_open_handler<Arg>))
+        , req_handler_(&(default_req_handler<Arg>))
+        , close_handler_(&(default_close_handler<Arg>))
         {}
         
-        protocol_handler(const handler_t &handler)
-        : handler_(handler)
-        , arg_()
-        {}
+        void set_default_argument(const Arg &arg)
+        { arg_=arg; }
         
-        protocol_handler(handler_t &&handler, Arg &&arg)
-        : handler_(std::move(handler))
-        , arg_(std::move(arg))
-        {}
+        void set_open_handler(const handler_t &handler)
+        { open_handler_=handler; }
         
-        protocol_handler(const handler_t &handler, const Arg &arg)
-        : handler_(handler)
-        , arg_(arg)
-        {}
+        void set_request_handler(const handler_t &handler)
+        { req_handler_=handler; }
         
-        protocol_handler(handler_t &&handler, const Arg &arg)
-        : handler_(std::move(handler))
-        , arg_(arg)
-        {}
-        
-        protocol_handler(const handler_t &handler, Arg &&arg)
-        : handler_(handler)
-        , arg_(std::move(arg))
-        {}
-        
-        protocol_handler(const protocol_handler &other)
-        : handler_(other.handler_)
-        , arg_(other.arg_)
-        {}
-        
-        protocol_handler(protocol_handler &&other)
-        : handler_(std::move(other.handler_))
-        , arg_(std::move(other.arg_))
-        {}
+        void set_close_handler(const handler_t &handler)
+        { close_handler_=handler; }
         
         void operator()(async_tcp_stream &s) {
             session_t session(s);
-            request_handler_t h([this](session_t &session)->bool{
-                return handler_(session, arg_);
-            });
-            std::function<bool(session_t &)> cb([this, &h](session_t &session)->bool{
-                return request_callback(session, h);
-            });
-            parse_request(session, cb);
+            {
+                if(!open_handler_(session, arg_))
+                    return;
+                struct guard_t {
+                    guard_t(this_t *p, session_t &s) : protocol_handler(p), session(s) {}
+                    ~guard_t()
+                    { protocol_handler->close_handler_(session, protocol_handler->arg_); }
+                    this_t *protocol_handler;
+                    session_t &session;
+                } guard(this, session);
+                request_handler_t h([this](session_t &session)->bool{
+                    return req_handler_(session, arg_);
+                });
+                std::function<bool(session_t &)> cb([this, &h](session_t &session)->bool{
+                    return request_callback(session, h);
+                });
+                parse_request(session, cb);
+            }
         }
         
-        handler_t handler_;
+        handler_t open_handler_;
+        handler_t req_handler_;
+        handler_t close_handler_;
         Arg arg_;
     };
 
-    // In case we don't need any argument
+    /**
+     * Handle HTTP protocol handler without argument
+     */
     template<>
-    struct protocol_handler<void> {
+    struct protocol_handler<> {
+        typedef protocol_handler<> this_t;
         typedef std::function<bool(session_t &)> handler_t;
         
-        protocol_handler(handler_t &&handler)
-        : handler_(handler)
+        protocol_handler()
+        : open_handler_(&(default_open_handler<>))
+        , req_handler_(&(default_req_handler<>))
+        , close_handler_(&(default_close_handler<>))
         {}
         
-        protocol_handler(const protocol_handler &other)
-        : handler_(other.handler_)
-        {}
+        void set_open_handler(const handler_t &handler)
+        { open_handler_=handler; }
         
-        protocol_handler(protocol_handler &&other)
-        : handler_(std::move(other.handler_))
-        {}
+        void set_request_handler(const handler_t &handler)
+        { req_handler_=handler; }
+        
+        void set_close_handler(const handler_t &handler)
+        { close_handler_=handler; }
         
         void operator()(async_tcp_stream &s) {
             session_t session(s);
-            std::function<bool(session_t &)> cb([this](session_t &session)->bool{
-                return request_callback(session, handler_);
-            });
-            parse_request(session, cb);
+            {
+                if(!open_handler_(session))
+                    return;
+                struct guard_t {
+                    guard_t(this_t *p, session_t &s) : protocol_handler(p), session(s) {}
+                    ~guard_t() { protocol_handler->close_handler_(session); }
+                    this_t *protocol_handler;
+                    session_t &session;
+                } guard(this, session);
+                std::function<bool(session_t &)> cb([this](session_t &session)->bool{
+                    return request_callback(session, req_handler_);
+                });
+                parse_request(session, cb);
+            }
         }
         
-        handler_t handler_;
+        handler_t open_handler_;
+        handler_t req_handler_;
+        handler_t close_handler_;
     };
 }   // End of namespace http
 

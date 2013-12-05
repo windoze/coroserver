@@ -95,10 +95,16 @@ public:
     inline boost::asio::io_service &io_service()
     { return yield_context().handler_.dispatcher_.get_io_service(); }
 
-    void set_read_timeout(int timeout)
+    int read_timeout() const
+    { return read_timeout_; }
+    
+    int write_timeout() const
+    { return write_timeout_; }
+    
+    void read_timeout(int timeout)
     { read_timeout_=timeout; }
     
-    void set_write_timeout(int timeout)
+    void write_timeout(int timeout)
     { write_timeout_=timeout; }
     
     void set_read_timeout_callback(timeout_callback_t &&cb)
@@ -303,13 +309,17 @@ public:
         boost::asio::spawn(strand(), BOOST_ASIO_MOVE_CAST(Function)(function));
     }
     
-    void set_read_timeout(int timeout) {
-        sbuf_->set_read_timeout(timeout);
-    }
+    int read_timeout() const
+    { return sbuf_->read_timeout(); }
     
-    void set_write_timeout(int timeout) {
-        sbuf_->set_write_timeout(timeout);
-    }
+    int write_timeout() const
+    { return sbuf_->write_timeout(); }
+    
+    void read_timeout(int timeout)
+    { sbuf_->read_timeout(timeout); }
+    
+    void write_timeout(int timeout)
+    { sbuf_->write_timeout(timeout); }
 
 private:
     streambuf_ptr sbuf_;
