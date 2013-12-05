@@ -27,8 +27,11 @@ namespace http {
     routing_pred_t operator ||(routing_pred_t c1, routing_pred_t c2);
     routing_pred_t operator !(routing_pred_t c);
     
+    template<typename... Arg>
+    struct router;
+    
     template<typename Arg>
-    struct router {
+    struct router<Arg> {
         typedef std::function<bool(session_t &, Arg &)> handler_t;
         typedef std::pair<routing_pred_t, handler_t> routing_entry_t;
         typedef std::list<routing_entry_t> routing_table_t;
@@ -54,7 +57,7 @@ namespace http {
     };
 
     template<>
-    struct router<void> {
+    struct router<> {
         typedef std::function<bool(session_t &)> handler_t;
         typedef std::pair<routing_pred_t, handler_t> routing_entry_t;
         typedef std::list<routing_entry_t> routing_table_t;
