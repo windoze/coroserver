@@ -111,11 +111,7 @@ int main(int argc, const char *argv[]) {
             {http::url_equals("/favicon.ico"), &handle_not_found},
             {http::any(), &handle_other},
         }));
-        server s(handler,
-                 {
-                     {"0::0", "20000"},
-                     {"0::0", "20001"},
-                 },
+        server s({{handler, {"0::0", "20000"}}, {hh, {"0::0", "20001"}}},
                  num_threads);
         s();
     } catch (std::exception& e) {

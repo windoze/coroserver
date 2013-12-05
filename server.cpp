@@ -14,11 +14,9 @@ using namespace boost;
 using namespace boost::asio;
 using namespace boost::asio::ip;
 
-server::server(protocol_handler_t &&protocol_processor,
-               const endpoint_list_t &endpoints,
+server::server(const sap_desc_list_t &sap_desc_list,
                std::size_t thread_pool_size)
-: protocol_processor_(std::move(protocol_processor))
-, thread_pool_size_(thread_pool_size)
+: thread_pool_size_(thread_pool_size)
 , io_service_()
 , signals_(io_service_)
 {
@@ -33,28 +31,26 @@ server::server(protocol_handler_t &&protocol_processor,
     signals_.async_wait([this](system::error_code, int){ close(); });
     
     // Start listening on endpoints
-    listen(endpoints);
+    for (const sap_desc_t &sd : sap_desc_list)
+        listen(sd);
     
     // Accept incomint connections
     open();
 }
 
-void server::listen(const endpoint_list_t &epl) {
-    for (const endpoint_t &ep : epl)
-        listen(ep);
-}
-
-void server::listen(const endpoint_t &ep) {
+void server::listen(const sap_desc_t &sd) {
+    const endpoint_t &ep=sd.second;
     // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
     tcp::resolver resolver(io_service_);
     tcp::resolver::query query(ep.first, ep.second);
     tcp::endpoint endpoint = *resolver.resolve(query);
-    acceptor_list_t::iterator i=acceptors_.emplace(acceptors_.end(),
-                                                   tcp::acceptor(io_service_));
-    i->open(endpoint.protocol());
-    i->set_option(tcp::acceptor::reuse_address(true));
-    i->bind(endpoint);
-    i->listen();
+    sap_ptr sap(new sap_t(sd.first, tcp::acceptor(io_service_)));
+    saps_.push_back(sap);
+    sap_list_t::reverse_iterator i=saps_.rbegin();
+    (*i)->second.open(endpoint.protocol());
+    (*i)->second.set_option(tcp::acceptor::reuse_address(true));
+    (*i)->second.bind(endpoint);
+    (*i)->second.listen();
 }
 
 void server::run() {
@@ -71,15 +67,15 @@ void server::run() {
 }
 
 void server::open() {
-    for (tcp::acceptor &a : acceptors_) {
+    for (sap_ptr &sap : saps_) {
         spawn(io_service_,
               [&](yield_context yield) {
                   for (;;) {
                       system::error_code ec;
                       tcp::socket socket(io_service_);
-                      a.async_accept(socket, yield[ec]);
+                      sap->second.async_accept(socket, yield[ec]);
                       if (!ec)
-                          handle_connect(std::move(socket));
+                          handle_connect(std::move(socket), sap->first);
                   }
               });
     }
@@ -88,14 +84,13 @@ void server::open() {
 void server::close()
 { io_service_.stop(); }
 
-void server::handle_connect(tcp::socket &&socket) {
+void server::handle_connect(tcp::socket &&socket, const protocol_handler_t &handler) {
     spawn(strand(io_service_),
-          [this, &socket](yield_context yield) {
+          // Create a new protocol handler for each connection
+          [this, &socket, handler](yield_context yield) {
               std::shared_ptr<async_tcp_streambuf> sbp(std::make_shared<async_tcp_streambuf>(std::move(socket), yield));
               async_tcp_stream s(sbp);
               try {
-                  // Create a new protocol handler for each connection
-                  protocol_handler_t handler(protocol_processor_);
                   handler(s);
               } catch (std::exception const& e) {
                   // TODO: Log error

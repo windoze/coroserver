@@ -18,8 +18,9 @@
 #include "async_stream.h"
 
 typedef std::pair<std::string, std::string> endpoint_t;
-typedef std::vector<endpoint_t> endpoint_list_t;
 typedef std::function<void(async_tcp_stream&)> protocol_handler_t;
+typedef std::pair<protocol_handler_t, endpoint_t> sap_desc_t;
+typedef std::vector<sap_desc_t> sap_desc_list_t;
 
 /**
  * Stream-oriented socket server
@@ -33,8 +34,7 @@ public:
      * @param endpoints listening addresses and ports
      * @param thread_pool_size number of threads that run simultaneously to process client connections
      */
-    server(protocol_handler_t &&protocol_processor,
-           const endpoint_list_t &endpoints,
+    server(const sap_desc_list_t &sap_desc_list,
            std::size_t thread_pool_size);
     
     // Non-copyable
@@ -48,19 +48,19 @@ public:
     { run(); }
 
 private:
-    void listen(const endpoint_list_t &epl);
-    void listen(const endpoint_t &ep);
+    void listen(const sap_desc_t &sd);
     void open();
     void close();
     void run();
-    void handle_connect(boost::asio::ip::tcp::socket &&socket);
+    void handle_connect(boost::asio::ip::tcp::socket &&socket, const protocol_handler_t &handler);
 
-    protocol_handler_t protocol_processor_;
     std::size_t thread_pool_size_;
     boost::asio::io_service io_service_;
     boost::asio::signal_set signals_;
-    typedef std::vector<boost::asio::ip::tcp::acceptor> acceptor_list_t;
-    acceptor_list_t acceptors_;
+    typedef std::pair<protocol_handler_t, boost::asio::ip::tcp::acceptor> sap_t;
+    typedef std::shared_ptr<sap_t> sap_ptr;
+    typedef std::vector<sap_ptr> sap_list_t;
+    sap_list_t saps_;
 };
 
 #endif /* defined(server_h_included) */
