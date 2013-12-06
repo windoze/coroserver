@@ -337,9 +337,9 @@ inline async_tcp_stream open_async_tcp_stream(const std::string &host,
     boost::asio::io_service &ios=yield.handler_.dispatcher_.get_io_service();
     tcp::resolver resolver(ios);
     tcp::resolver::query query(host, port);
-    tcp::endpoint endpoint=*resolver.resolve(query);;
+    tcp::endpoint endpoint=*resolver.async_resolve(query, yield);
     tcp::socket s(ios);
-    s.connect(endpoint);
+    s.async_connect(endpoint, yield);
     std::shared_ptr<async_tcp_streambuf> sbp(std::make_shared<async_tcp_streambuf>(std::move(s), yield));
     return async_tcp_stream(sbp);
 }
