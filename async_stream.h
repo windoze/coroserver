@@ -184,7 +184,7 @@ private:
             if ( c != traits_type::eof() ) {
                 *pptr() = c;
                 pbump(1);
-                if (nudge_())
+                if (nudge_()==0)
                     return c;
             } else {
                 c = 0;
