@@ -57,7 +57,11 @@ bool handle_index(http::session_t &session, arg_t &arg) {
     for (auto &h : session.request().headers()) {
         ss << "<TR><TD>" << h.first << "</TD><TD>" << h.second << "</TD></TR>\r\n";
     }
-    ss << "</TABLE></BODY></HTML>\r\n";
+    ss << "</TABLE>\r\n";
+    for(int i=0; i<1000; i++) {
+        ss << "Line" << i << "<BR/>\r\n";
+    }
+    ss << "</BODY></HTML>\r\n";
     return true;
 }
 
@@ -92,10 +96,9 @@ bool handle_other(http::session_t &session, arg_t &arg) {
 }
 
 // Test client connection
-bool handle_proxy(http::session_t &session, arg_t &arg) {
+bool handle_proxy(http::session_t &session) {
     session.raw(true);
-    async_tcp_stream s(session.yield_context(), "u", "80");
-    session.request().body_stream() << session.request().body();
+    async_tcp_stream s(session.yield_context(), "0d0a.com", "80");
     s << session.request();
     s >> session.response();
     session.raw_stream() << session.response();
@@ -106,7 +109,8 @@ bool handle_proxy(http::session_t &session, arg_t &arg) {
 int main(int argc, const char *argv[]) {
     std::size_t num_threads = 3;
     try {
-        http::protocol_handler<> hh;
+        http::protocol_handler<> hproxy;
+        hproxy.set_request_handler(&handle_proxy);
         
         http::protocol_handler<arg_t> handler;
         handler.set_default_argument(42);
@@ -120,11 +124,10 @@ int main(int argc, const char *argv[]) {
             {http::url_equals("/"), &handle_alt_index},
             {http::url_equals("/index.html"), &handle_index},
             {http::url_starts_with("/index") && http::url_ends_with(".htm"), &handle_alt_index},
-            {http::url_starts_with("/ptest/"), &handle_proxy},
             {http::url_equals("/favicon.ico"), &handle_not_found},
             {http::any(), &handle_other},
         }));
-        server s({{handler, {"0::0", "20000"}}, {hh, {"0::0", "20001"}}},
+        server s({{handler, {"0::0", "20000"}}, {hproxy, {"0::0", "20001"}}},
                  num_threads);
         s();
     } catch (std::exception& e) {
