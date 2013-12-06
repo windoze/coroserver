@@ -94,7 +94,7 @@ bool handle_other(http::session_t &session, arg_t &arg) {
 // Test client connection
 bool handle_proxy(http::session_t &session, arg_t &arg) {
     session.raw(true);
-    async_tcp_stream s(open_async_tcp_stream("u", "80", session.yield_context()));
+    async_tcp_stream s(session.yield_context(), "u", "80");
     session.request().body_stream() << session.request().body();
     s << session.request();
     s >> session.response();
