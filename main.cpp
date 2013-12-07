@@ -65,10 +65,10 @@ bool handle_index(http::session_t &session, arg_t &arg) {
     return true;
 }
 
-// Test deferred process
+// Test deferred process with spawn
 bool handle_other(http::session_t &session, arg_t &arg) {
     boost::asio::condition_flag flag(session);
-    session.strand().post([&session, &flag, &arg](){
+    session.spawn([&session, &flag, &arg](boost::asio::yield_context yield){
         using namespace std;
         ostream &ss=session.response().body_stream();
         ss << "<HTML>\r\n<TITLE>" << session.request().path() << "</TITLE><BODY>\r\n";
