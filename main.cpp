@@ -39,6 +39,7 @@ bool handle_not_found(http::session_t &session, arg_t &arg) {
 // Test normal process
 bool handle_index(http::session_t &session, arg_t &arg) {
     using namespace std;
+    session.response().body_stream().reserve(16384);
     ostream &ss=session.response().body_stream();
     ss << "<HTML>\r\n<TITLE>Index</TITLE><BODY>\r\n";
     ss << "<H1>This is the index page</H1><HR/>\r\n";
