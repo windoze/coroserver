@@ -30,16 +30,54 @@ struct endpoint_resolver;
 
 template<>
 struct endpoint_resolver<boost::asio::ip::tcp> {
-    boost::asio::ip::tcp::endpoint resolve(const std::string &host,
-                                           const std::string &port,
+    boost::asio::ip::tcp::endpoint resolve(const std::string &endpoint_desc,
+                                           const std::string &default_port,
+                                           boost::asio::io_service &ios)
+    {
+        using namespace boost::asio::ip;
+        tcp::resolver resolver(ios);
+        size_t pos=endpoint_desc.find_last_of(':');
+        std::string host;
+        std::string port;
+        if (pos==std::string::npos) {
+            host=endpoint_desc;
+            port=default_port;
+        } else {
+            host.assign(endpoint_desc.begin(), endpoint_desc.begin()+pos);
+            if (*host.begin()=='[' && *host.rbegin()==']') {
+                host=std::string(host.begin()+1, host.end()-1);
+            }
+            port.assign(endpoint_desc.begin()+pos+1, endpoint_desc.end());
+        }
+        tcp::resolver::query query(host, port);
+        return *resolver.resolve(query);
+    }
+    
+    boost::asio::ip::tcp::endpoint resolve(const std::string &endpoint_desc,
+                                           const std::string &default_port,
                                            boost::asio::yield_context yield)
     {
         using namespace boost::asio::ip;
         boost::asio::io_service &ios=yield.handler_.dispatcher_.get_io_service();
         tcp::resolver resolver(ios);
+        size_t pos=endpoint_desc.find_last_of(':');
+        std::string host;
+        std::string port;
+        if (pos==std::string::npos) {
+            host=endpoint_desc;
+            port=default_port;
+        } else {
+            host.assign(endpoint_desc.begin(), endpoint_desc.begin()+pos);
+            if (*host.begin()=='[' && *host.rbegin()==']') {
+                host=std::string(host.begin()+1, host.end()-1);
+            }
+            port.assign(endpoint_desc.begin()+pos+1, endpoint_desc.end());
+        }
         tcp::resolver::query query(host, port);
         return *resolver.async_resolve(query, yield);
     }
+    
+    std::string default_port_;
 };
 
 /*

@@ -97,8 +97,13 @@ bool handle_other(http::session_t &session, arg_t &arg) {
 
 // Test client connection
 bool handle_proxy(http::session_t &session) {
+    http::headers_t::const_iterator i=http::find_header(session.request().headers(), "host");
+    if (i==session.request().headers().end()) {
+        session.response().code(http::BAD_REQUEST);
+        return false;
+    }
     session.raw(true);
-    async_tcp_stream s(session.yield_context(), "0d0a.com", "80");
+    async_tcp_stream s(session.yield_context(), i->second, "80");
     s << session.request();
     s >> session.response();
     session.raw_stream() << session.response();
@@ -127,7 +132,7 @@ int main(int argc, const char *argv[]) {
             {http::url_equals("/favicon.ico"), &handle_not_found},
             {http::any(), &handle_other},
         }));
-        server s({{handler, {"0::0", "20000"}}, {hproxy, {"0::0", "20001"}}},
+        server s({{handler, "0.0.0.0:20000"}, {hproxy, "0.0.0.0:20001"}},
                  num_threads);
         s();
     } catch (std::exception& e) {

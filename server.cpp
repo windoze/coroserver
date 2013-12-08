@@ -41,9 +41,9 @@ server::server(const sap_desc_list_t &sap_desc_list,
 void server::listen(const sap_desc_t &sd) {
     const endpoint_t &ep=sd.second;
     // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-    tcp::resolver resolver(io_service_);
-    tcp::resolver::query query(ep.first, ep.second);
-    tcp::endpoint endpoint = *resolver.resolve(query);
+    endpoint_resolver<tcp> resolver;
+    tcp::endpoint endpoint = resolver.resolve(ep, "", io_service_);
+
     sap_ptr sap(new sap_t(sd.first, tcp::acceptor(io_service_)));
     saps_.push_back(sap);
     sap_list_t::reverse_iterator i=saps_.rbegin();

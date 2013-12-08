@@ -17,7 +17,7 @@
 #include <boost/asio/signal_set.hpp>
 #include "async_stream.h"
 
-typedef std::pair<std::string, std::string> endpoint_t;
+typedef std::string endpoint_t;
 typedef std::function<void(async_tcp_stream&)> protocol_handler_t;
 typedef std::pair<protocol_handler_t, endpoint_t> sap_desc_t;
 typedef std::vector<sap_desc_t> sap_desc_list_t;
