@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2D14BC951854BE5D00D3E709 /* calculator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D14BC931854BE5D00D3E709 /* calculator.cpp */; };
 		2D40A6D017E0B88B00282132 /* http_protocol.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D40A6CE17E0B88B00282132 /* http_protocol.cpp */; };
 		2DB9AE6316DB01CF0001779C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5B16DB01CF0001779C /* main.cpp */; };
 		2DB9AE6416DB01CF0001779C /* server.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5C16DB01CF0001779C /* server.cpp */; };
@@ -30,6 +31,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2D14BC931854BE5D00D3E709 /* calculator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = calculator.cpp; sourceTree = "<group>"; };
+		2D14BC941854BE5D00D3E709 /* calculator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = calculator.h; sourceTree = "<group>"; };
 		2D40A6CE17E0B88B00282132 /* http_protocol.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = http_protocol.cpp; sourceTree = "<group>"; };
 		2D40A6CF17E0B88B00282132 /* http_protocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = http_protocol.h; sourceTree = "<group>"; };
 		2DABC3FD184A44E6003E683E /* condition_variable.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = condition_variable.hpp; sourceTree = "<group>"; };
@@ -93,6 +96,7 @@
 			children = (
 				2DB9AE5B16DB01CF0001779C /* main.cpp */,
 				2DB9AE5C16DB01CF0001779C /* server.cpp */,
+				2D14BC931854BE5D00D3E709 /* calculator.cpp */,
 				2D40A6CE17E0B88B00282132 /* http_protocol.cpp */,
 				2DD67736184C9FCC003AF10A /* routing.cpp */,
 			);
@@ -105,6 +109,7 @@
 				2DB9AE5A16DB01CF0001779C /* async_stream.h */,
 				2DABC3FD184A44E6003E683E /* condition_variable.hpp */,
 				2DB9AE5D16DB01CF0001779C /* server.h */,
+				2D14BC941854BE5D00D3E709 /* calculator.h */,
 				2D40A6CF17E0B88B00282132 /* http_protocol.h */,
 				2DD67737184C9FCC003AF10A /* routing.h */,
 			);
@@ -173,6 +178,7 @@
 			files = (
 				2DCE5ED71847272C009284E6 /* http_parser.c in Sources */,
 				2DB9AE6316DB01CF0001779C /* main.cpp in Sources */,
+				2D14BC951854BE5D00D3E709 /* calculator.cpp in Sources */,
 				2DD67738184C9FCC003AF10A /* routing.cpp in Sources */,
 				2DB9AE6416DB01CF0001779C /* server.cpp in Sources */,
 				2D40A6D017E0B88B00282132 /* http_protocol.cpp in Sources */,

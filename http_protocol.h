@@ -344,7 +344,7 @@ namespace http {
          *
          * @param raw_stream the socket stream
          */
-        session_t(async_tcp_stream &raw_stream)
+        session_t(net::async_tcp_stream &raw_stream)
         : raw_stream_(raw_stream)
         {}
 
@@ -425,10 +425,10 @@ namespace http {
         /**
          * Underlying socket stream
          */
-        inline async_tcp_stream &raw_stream()
+        inline net::async_tcp_stream &raw_stream()
         { return raw_stream_; }
         
-        inline const async_tcp_stream &raw_stream() const
+        inline const net::async_tcp_stream &raw_stream() const
         { return raw_stream_; }
         
         /**
@@ -467,7 +467,7 @@ namespace http {
         request_t request_;
         response_t response_;
         bool raw_=false;
-        async_tcp_stream &raw_stream_;
+        net::async_tcp_stream &raw_stream_;
         int count_=0;
         int max_keepalive_=0;
     };
@@ -524,7 +524,7 @@ namespace http {
         void set_close_handler(const handler_t &handler)
         { close_handler_=handler; }
         
-        void operator()(async_tcp_stream &s) {
+        void operator()(net::async_tcp_stream &s) {
             session_t session(s);
             {
                 if(!open_handler_(session, arg_))
@@ -575,7 +575,7 @@ namespace http {
         void set_close_handler(const handler_t &handler)
         { close_handler_=handler; }
         
-        void operator()(async_tcp_stream &s) {
+        void operator()(net::async_tcp_stream &s) {
             session_t session(s);
             {
                 if(!open_handler_(session))
