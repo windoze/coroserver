@@ -133,8 +133,13 @@ int main(int argc, const char *argv[]) {
             {http::url_equals("/favicon.ico"), &handle_not_found},
             {http::any(), &handle_other},
         }));
-        server s({{handler, "0.0.0.0:20000"}, {hproxy, "0.0.0.0:20001"}},
+        server s({{"[0::0]:20000", handler}, {"[0::0]:20001", hproxy}},
+                 [](boost::asio::io_service &)->bool { return true; },
+                 [](boost::asio::io_service &){},
                  num_threads);
+        if (!s.initialized()) {
+            // TODO: Log error
+        }
         s();
     } catch (std::exception& e) {
         std::cerr << "exception: " << e.what() << "\n";
