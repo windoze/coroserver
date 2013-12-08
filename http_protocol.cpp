@@ -440,8 +440,10 @@ namespace http {
         headers_.clear();
         keep_alive_=false;
         // NOTE: Why there is no clear() in ovectorstream?
-        std::string empty;
-        body_stream().swap_vector(empty);
+        if (!body().empty()) {
+            std::string empty;
+            body_stream().swap_vector(empty);
+        }
     }
     
     void response_t::clear() {
@@ -452,8 +454,10 @@ namespace http {
         headers_.clear();
         keep_alive_=false;
         // NOTE: Why there is no clear() in ovectorstream?
-        std::string empty;
-        body_stream().swap_vector(empty);
+        if (!body().empty()) {
+            std::string empty;
+            body_stream().swap_vector(empty);
+        }
     }
     
     bool parse_request(session_t &session, parse_callback_t &req_cb) {
