@@ -270,7 +270,8 @@ namespace net {
                     size_t ret=sd_.async_read_some(boost::asio::buffer(buffer_in_ + pb_size,
                                                                        bf_size - pb_size),
                                                    yield_[ec]);
-                    if(!ec) read_timer_.cancel(ec);
+                    boost::system::error_code ec1;
+                    read_timer_.cancel(ec1);
                     return ret;
                 } else {
                     return sd_.async_read_some(boost::asio::buffer(buffer_in_ + pb_size,
@@ -288,7 +289,8 @@ namespace net {
                                              boost::asio::const_buffers_1(pbase(),
                                                                           pptr()-pbase()),
                                              yield_[ec]);
-                    if(!ec) write_timer_.cancel(ec);
+                    boost::system::error_code ec1;
+                    write_timer_.cancel(ec1);
                 } else {
                     boost::asio::async_write(sd_,
                                              boost::asio::const_buffers_1(pbase(),
