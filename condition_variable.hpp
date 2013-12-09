@@ -17,13 +17,15 @@ namespace boost {
         class condition_variable {
             struct handler_t {
                 explicit handler_t(yield_context const ctx)
-                : coro_(ctx.coro_.lock())
+                : coro_(ctx.coro_)
                 {}
                 
-                void operator()()
-                { (*coro_)(); }
+                void operator()() {
+                    auto h(coro_.lock());
+                    if(h) (*h)();
+                }
                 
-                detail::shared_ptr<yield_context::callee_type> coro_;
+                detail::weak_ptr<yield_context::callee_type> coro_;
             };
             
         public:
@@ -36,7 +38,7 @@ namespace boost {
              * Will only be effective in the thread running the strand
              */
             void wait() {
-                if (strand().running_in_this_thread()) {
+                if (get_strand().running_in_this_thread()) {
                     suspended_.push_back(handler_t(ctx_));
                     ctx_.ca_();
                 }
@@ -47,14 +49,14 @@ namespace boost {
              * The notification procedure will be invoked in the strand
              */
             void notify_one() {
-                if (strand().running_in_this_thread()) {
+                if (get_strand().running_in_this_thread()) {
                     if (suspended_.empty()) return;
-                    strand().post(suspended_.front());
+                    get_strand().post(suspended_.front());
                     suspended_.pop_front();
                 } else {
-                    strand().post([this](){
+                    get_strand().post([this](){
                         if (suspended_.empty()) return;
-                        strand().post(suspended_.front());
+                        get_strand().post(suspended_.front());
                         suspended_.pop_front();
                     });
                 }
@@ -65,21 +67,21 @@ namespace boost {
              * The notification procedure will be invoked in the strand
              */
             void notify_all() {
-                if (strand().running_in_this_thread()) {
-                    for (handler_t &h : suspended_) strand().post(h);
+                if (get_strand().running_in_this_thread()) {
+                    for (handler_t &h : suspended_) get_strand().post(h);
                     suspended_.clear();
                 } else {
-                    strand().post([this](){
-                        for (handler_t &h : suspended_) strand().post(h);
+                    get_strand().post([this](){
+                        for (handler_t &h : suspended_) get_strand().post(h);
                         suspended_.clear();
                     });
                 }
             }
             
-            strand &strand()
+            strand &get_strand()
             { return ctx_.handler_.dispatcher_; }
             
-            yield_context &yield_context()
+            yield_context get_yield_context() const
             { return ctx_; }
             
         private:
