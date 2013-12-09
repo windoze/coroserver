@@ -20,6 +20,7 @@
 #include <boost/interprocess/streams/vectorstream.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include "async_stream.h"
+#include "logging.h"
 
 namespace http {
     extern const char *server_name;
@@ -57,6 +58,8 @@ namespace http {
         PATCH,
         PURGE,
     };
+    
+    std::string method_name(method);
     
     enum status_code {
         CONTINUE                        =100,
@@ -209,6 +212,16 @@ namespace http {
         { query_=v; }
         
         /**
+         * Full URL
+         */
+        std::string url() const {
+            if (query().empty()) {
+                return path();
+            }
+            return path()+"?"+query();
+        }
+        
+        /**
          * HTTP Headers
          */
         const headers_t &headers() const
@@ -346,8 +359,34 @@ namespace http {
          */
         session_t(net::async_tcp_stream &raw_stream)
         : raw_stream_(raw_stream)
-        {}
+        {
+            logger_.add_attribute("Module", boost::log::attributes::constant<std::string>("HTTP"));
+            logger_.add_attribute("Remote", boost::log::attributes::make_function([this]()->std::string{
+                return remote_peer();
+            }));
+            logger_.add_attribute("Local", boost::log::attributes::make_function([this]()->std::string{
+                return local_peer();
+            }));
+            logger_.add_attribute("Method", boost::log::attributes::make_function([this]()->std::string{
+                return method_name(request().method());
+            }));
+            logger_.add_attribute("URL", boost::log::attributes::make_function([this]()->std::string{
+                return request().url();
+            }));
+            logger_.add_attribute("Code", boost::log::attributes::make_function([this]()->int{
+                return static_cast<int>(response().code());
+            }));
+        }
 
+        /**
+         * Logger
+         */
+        logging::logger_t &logger()
+        { return logger_; }
+        
+        const logging::logger_t &logger() const
+        { return logger_; }
+        
         /**
          * HTTP request
          */
@@ -464,6 +503,10 @@ namespace http {
         }
         
     private:
+        std::string remote_peer();
+        std::string local_peer();
+        
+        logging::logger_t logger_;
         request_t request_;
         response_t response_;
         bool raw_=false;
@@ -497,7 +540,6 @@ namespace http {
      * Handle HTTP protocol handler with argument
      */
     // Base template
-    // TODO: There is no easy way to store-and-forward variadic template arguments in C++11
     template<typename... Arg>
     struct protocol_handler;
     

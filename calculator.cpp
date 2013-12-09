@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <boost/algorithm/string/trim.hpp>
 #include "calculator.h"
+#include "logging.h"
 
 namespace calculator {
     namespace details {
@@ -54,6 +55,9 @@ namespace calculator {
     }   // End of namespace details
     
     void protocol_handler(net::async_tcp_stream &s) {
+        logging::logger_t logger;
+        logger.add_attribute("Module", boost::log::attributes::constant<std::string>("Calculator"));
+        
         s << "Hello!" << std::endl;
         
         using boost::spirit::ascii::space;
@@ -72,6 +76,7 @@ namespace calculator {
                 s << v << std::endl;
             } else {
                 s << "Parse error" << std::endl;
+                LOG_INFO(logger) << "Illegal expression";
             }
         }
         s << "Bye!" << std::endl;

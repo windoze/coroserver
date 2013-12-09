@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		2D14BC951854BE5D00D3E709 /* calculator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D14BC931854BE5D00D3E709 /* calculator.cpp */; };
+		2D14BC9B1855C9F600D3E709 /* logging.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D14BC991855C9F600D3E709 /* logging.cpp */; };
+		2D14BC9F1855CC2200D3E709 /* libboost_filesystem-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D14BC9C1855CC2200D3E709 /* libboost_filesystem-mt.a */; };
+		2D14BCA01855CC2200D3E709 /* libboost_log_setup-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D14BC9D1855CC2200D3E709 /* libboost_log_setup-mt.a */; };
+		2D14BCA11855CC2200D3E709 /* libboost_log-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D14BC9E1855CC2200D3E709 /* libboost_log-mt.a */; };
+		2D14BCA31855CC3100D3E709 /* libboost_thread-mt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D14BCA21855CC3100D3E709 /* libboost_thread-mt.a */; };
 		2D40A6D017E0B88B00282132 /* http_protocol.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D40A6CE17E0B88B00282132 /* http_protocol.cpp */; };
 		2DB9AE6316DB01CF0001779C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5B16DB01CF0001779C /* main.cpp */; };
 		2DB9AE6416DB01CF0001779C /* server.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9AE5C16DB01CF0001779C /* server.cpp */; };
@@ -33,6 +38,12 @@
 /* Begin PBXFileReference section */
 		2D14BC931854BE5D00D3E709 /* calculator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = calculator.cpp; sourceTree = "<group>"; };
 		2D14BC941854BE5D00D3E709 /* calculator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = calculator.h; sourceTree = "<group>"; };
+		2D14BC991855C9F600D3E709 /* logging.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logging.cpp; sourceTree = "<group>"; };
+		2D14BC9A1855C9F600D3E709 /* logging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = logging.h; sourceTree = "<group>"; };
+		2D14BC9C1855CC2200D3E709 /* libboost_filesystem-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_filesystem-mt.a"; path = "../../../../usr/local/Cellar/boost/1.55.0/lib/libboost_filesystem-mt.a"; sourceTree = "<group>"; };
+		2D14BC9D1855CC2200D3E709 /* libboost_log_setup-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_log_setup-mt.a"; path = "../../../../usr/local/Cellar/boost/1.55.0/lib/libboost_log_setup-mt.a"; sourceTree = "<group>"; };
+		2D14BC9E1855CC2200D3E709 /* libboost_log-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_log-mt.a"; path = "../../../../usr/local/Cellar/boost/1.55.0/lib/libboost_log-mt.a"; sourceTree = "<group>"; };
+		2D14BCA21855CC3100D3E709 /* libboost_thread-mt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libboost_thread-mt.a"; path = "../../../../usr/local/Cellar/boost/1.55.0/lib/libboost_thread-mt.a"; sourceTree = "<group>"; };
 		2D40A6CE17E0B88B00282132 /* http_protocol.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = http_protocol.cpp; sourceTree = "<group>"; };
 		2D40A6CF17E0B88B00282132 /* http_protocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = http_protocol.h; sourceTree = "<group>"; };
 		2DABC3FD184A44E6003E683E /* condition_variable.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = condition_variable.hpp; sourceTree = "<group>"; };
@@ -58,7 +69,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2D14BCA11855CC2200D3E709 /* libboost_log-mt.a in Frameworks */,
+				2D14BCA01855CC2200D3E709 /* libboost_log_setup-mt.a in Frameworks */,
 				2DCEAB5E17E0885C00204B89 /* libboost_system-mt.a in Frameworks */,
+				2D14BCA31855CC3100D3E709 /* libboost_thread-mt.a in Frameworks */,
+				2D14BC9F1855CC2200D3E709 /* libboost_filesystem-mt.a in Frameworks */,
 				2DCEAB5C17E0794C00204B89 /* libboost_coroutine-mt.a in Frameworks */,
 				2DCEAB5817E0722400204B89 /* libboost_context-mt.a in Frameworks */,
 			);
@@ -70,13 +85,17 @@
 		2DB9AE4316DB01AB0001779C = {
 			isa = PBXGroup;
 			children = (
-				2DCE5ED81847273F009284E6 /* http-parser */,
+				2D14BCA21855CC3100D3E709 /* libboost_thread-mt.a */,
+				2D14BC9C1855CC2200D3E709 /* libboost_filesystem-mt.a */,
+				2D14BC9D1855CC2200D3E709 /* libboost_log_setup-mt.a */,
+				2D14BC9E1855CC2200D3E709 /* libboost_log-mt.a */,
 				2DCEAB5D17E0885C00204B89 /* libboost_system-mt.a */,
 				2DCEAB5B17E0794C00204B89 /* libboost_coroutine-mt.a */,
 				2DCEAB5517E0722400204B89 /* libboost_context-mt.a */,
 				2DB9AE7116DB0B310001779C /* .gitignore */,
 				2DB9AE7016DB0A2D0001779C /* README.md */,
 				2DB9AE6F16DB029D0001779C /* CMakeLists.txt */,
+				2DCE5ED81847273F009284E6 /* http-parser */,
 				2DB9AE6816DB01F80001779C /* include */,
 				2DB9AE6716DB01EA0001779C /* src */,
 				2DB9AE4D16DB01AB0001779C /* Products */,
@@ -95,6 +114,7 @@
 			isa = PBXGroup;
 			children = (
 				2DB9AE5B16DB01CF0001779C /* main.cpp */,
+				2D14BC991855C9F600D3E709 /* logging.cpp */,
 				2DB9AE5C16DB01CF0001779C /* server.cpp */,
 				2D14BC931854BE5D00D3E709 /* calculator.cpp */,
 				2D40A6CE17E0B88B00282132 /* http_protocol.cpp */,
@@ -108,6 +128,7 @@
 			children = (
 				2DB9AE5A16DB01CF0001779C /* async_stream.h */,
 				2DABC3FD184A44E6003E683E /* condition_variable.hpp */,
+				2D14BC9A1855C9F600D3E709 /* logging.h */,
 				2DB9AE5D16DB01CF0001779C /* server.h */,
 				2D14BC941854BE5D00D3E709 /* calculator.h */,
 				2D40A6CF17E0B88B00282132 /* http_protocol.h */,
@@ -177,6 +198,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2DCE5ED71847272C009284E6 /* http_parser.c in Sources */,
+				2D14BC9B1855C9F600D3E709 /* logging.cpp in Sources */,
 				2DB9AE6316DB01CF0001779C /* main.cpp in Sources */,
 				2D14BC951854BE5D00D3E709 /* calculator.cpp in Sources */,
 				2DD67738184C9FCC003AF10A /* routing.cpp in Sources */,
@@ -206,6 +228,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
+					"BOOST_LOG_DYN_LINK=1",
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
@@ -236,6 +259,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = "BOOST_LOG_DYN_LINK=1";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;

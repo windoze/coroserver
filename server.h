@@ -15,6 +15,7 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
+#include "logging.h"
 #include "async_stream.h"
 
 namespace net {
@@ -77,6 +78,7 @@ namespace net {
         void run();
         void handle_connect(boost::asio::ip::tcp::socket &&socket, const protocol_handler_t &handler);
         
+        logging::logger_t logger_;
         std::size_t thread_pool_size_;
         boost::asio::io_service io_service_;
         boost::asio::signal_set signals_;

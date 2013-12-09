@@ -14,6 +14,7 @@ namespace net {
     using namespace boost;
     using namespace boost::asio;
     using namespace boost::asio::ip;
+    using namespace logging;
     
     server::server(const sap_desc_list_t &sap_desc_list,
                    const initialization_handler_t &initialization_handler,
@@ -26,6 +27,7 @@ namespace net {
     , init_state_(initialization_handler_(io_service_))
     , signals_(io_service_)
     {
+        logger_.add_attribute("Module", boost::log::attributes::constant<std::string>("Server"));
         if (init_state_) {
             // Register to handle the signals that indicate when the server should exit.
             // It is safe to register for the same signal multiple times in a program,
@@ -43,6 +45,8 @@ namespace net {
             
             // Accept incomint connections
             open();
+        } else {
+            LOG_ERROR(logger_) << "Initialization failed";
         }
     }
     
@@ -71,6 +75,7 @@ namespace net {
         (*i)->first.set_option(tcp::acceptor::reuse_address(true));
         (*i)->first.bind(endpoint);
         (*i)->first.listen();
+        LOG_INFO(logger_) << "Start listening on " << sd.first;
     }
     
     void server::run() {
@@ -109,17 +114,30 @@ namespace net {
     { io_service_.stop(); }
     
     void server::handle_connect(tcp::socket &&socket, const protocol_handler_t &handler) {
+        boost::system::error_code ec;
+        boost::asio::ip::tcp::socket::endpoint_type ep=socket.remote_endpoint(ec);
+        if (ec) {
+            LOG_WARNING(logger_) << "Connection closed before creating protocol handler";
+            return;
+        }
+        std::string remote_addr(ep.address().to_string());
+        unsigned short remote_port=ep.port();
+        ep=socket.local_endpoint(ec);
+        std::string local_addr(ep.address().to_string());
+        unsigned short local_port=ep.port();
+        LOG_INFO(logger_) << "[" << remote_addr << ':' << remote_port << " => " << local_addr << ':' << local_port << "] Connection established";
         spawn(strand(io_service_),
               // Create a new protocol handler for each connection
-              [this, &socket, handler](yield_context yield) {
-                  async_tcp_stream s(std::move(socket), yield);
+              [this, &socket, handler, remote_addr, remote_port, local_addr, local_port](yield_context yield) {
                   try {
+                      async_tcp_stream s(std::move(socket), yield);
                       handler(s);
                   } catch (std::exception const& e) {
-                      // TODO: Log error
+                      LOG_ERROR(logger_) << "Caught exception : " << e.what();
                   } catch(...) {
-                      // TODO: Log error
+                      LOG_ERROR(logger_) << "Caught unknown exception";
                   }
+                  LOG_INFO(logger_) << "[" << remote_addr << ':' << remote_port << " => " << local_addr << ':' << local_port << "] Connection closed";
               });
     }
 }   // End of namespace net

@@ -8,6 +8,7 @@
 
 #include <map>
 #include <iostream>
+#include <boost/lexical_cast.hpp>
 #include <boost/interprocess/streams/vectorstream.hpp>
 #include "http-parser/http_parser.h"
 #include "http_protocol.h"
@@ -427,6 +428,13 @@ namespace http {
         }   // End of namespace response
     }   // End of namespace details
     
+    std::string method_name(method m) {
+        std::map<method, std::string>::const_iterator i=details::method_name_map.find(m);
+        if (i==details::method_name_map.end())
+            return boost::lexical_cast<std::string>(static_cast<int>(m));
+        return i->second;
+    }
+    
     void request_t::clear() {
         http_major_=0;
         http_minor_=0;
@@ -460,6 +468,30 @@ namespace http {
         }
     }
     
+    std::string session_t::remote_peer() {
+        std::stringstream ret;
+        boost::system::error_code ec;
+        boost::asio::ip::tcp::socket::endpoint_type ep=raw_stream().stream_descriptor().remote_endpoint(ec);
+        if (ec) {
+            ret << "UNKNOWN";
+        } else {
+            ret << ep.address().to_string() << ':' << ep.port();
+        }
+        return ret.str();
+    }
+    
+    std::string session_t::local_peer() {
+        std::stringstream ret;
+        boost::system::error_code ec;
+        boost::asio::ip::tcp::socket::endpoint_type ep=raw_stream().stream_descriptor().local_endpoint(ec);
+        if (ec) {
+            ret << "UNKNOWN";
+        } else {
+            ret << ep.address().to_string() << ':' << ep.port();
+        }
+        return ret.str();
+    }
+    
     bool parse_request(session_t &session, parse_callback_t &req_cb) {
         details::request::parser p(session, req_cb);
         return p.parse();
@@ -470,14 +502,20 @@ namespace http {
         try {
             session.response().clear();
             // Returning false from handle_request indicates the handler doesn't want the connection to keep alive
+            LOG_DEBUG(session.logger()) << "Processing new request, " << session.count() << " processed";
             ret = handler(session) && session.keep_alive();
         } catch(...) {
-            session.raw_stream() << "HTTP/1.1 500 Internal Server Error\r\n";
+            session.response().clear();
+            session.raw(false);
+            session.response().keep_alive(false);
+            session.response().code(INTERNAL_SERVER_ERROR);
+            LOG_WARNING(session.logger()) << "Exception in request handler";
         }
         
         if (session.raw()) {
             // Do nothing here
             // Handler handles whole HTTP response by itself, include status, headers, and body
+            LOG_DEBUG(session.logger()) << "Session in raw mode";
         } else {
             if (ret) {
                 char buf[100];
@@ -487,9 +525,11 @@ namespace http {
                         session.response().headers().push_back({"Connection", "keep-alive"});
                         sprintf(buf, "timeout=%d, max=%d", session.read_timeout(), session.max_keepalive()-session.count());
                         session.response().headers().push_back({"Keep-Alive", buf});
+                        LOG_DEBUG(session.logger()) << "Connection: keep-alive, " << "Keep-Alive: " << buf;
                     } else {
                         // Max limit reached, stop keeping alive
                         session.response().headers().push_back({"Connection", "close"});
+                        LOG_DEBUG(session.logger()) << "Connection: close";
                         ret=false;
                     }
                 } else {
@@ -497,15 +537,19 @@ namespace http {
                     session.response().headers().push_back({"Connection", "keep-alive"});
                     sprintf(buf, "timeout=%d", session.read_timeout());
                     session.response().headers().push_back({"Keep-Alive", buf});
+                    LOG_DEBUG(session.logger()) << "Connection: keep-alive, " << "Keep-Alive: " << buf;
                 }
             } else {
                 session.response().headers().push_back({"Connection", "close"});
+                LOG_DEBUG(session.logger()) << "Connection: close";
                 ret=false;
             }
             session.raw_stream() << session.response();
         }
         session.raw_stream().flush();
         session.inc_count();
+        LOG_INFO(session.logger()) << "";
+        //LOG_DEBUG(session.logger()) << session.count() << " requests processed";
         return ret;
     }
 

@@ -8,6 +8,7 @@
 
 #include <functional>
 #include <iostream>
+#include "logging.h"
 #include "server.h"
 #include "http_protocol.h"
 #include "routing.h"
@@ -114,6 +115,7 @@ bool handle_proxy(http::session_t &session) {
 }
 
 int main(int argc, const char *argv[]) {
+    logging::init();
     std::size_t num_threads = 3;
     try {
         http::protocol_handler<> hproxy;
